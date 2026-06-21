@@ -27,6 +27,7 @@ from services import indicators as ind
 from data.journal import init_db, to_legs
 from services import instruments
 from services.briefing import morning_briefing
+from services import charting
 
 load_dotenv()
 
@@ -228,6 +229,19 @@ with left:
                 f"<span class='muted'>entry {snap_d.get('entry')} · SL {snap_d.get('stop_loss')} "
                 f"· tgt {snap_d.get('target')}</span><br>{chips}</div>",
                 unsafe_allow_html=True)
+
+            with st.expander(f"📈 {instr.symbol} chart"):
+                markers = {"entry": snap_d.get("entry"),
+                           "stop_loss": snap_d.get("stop_loss"),
+                           "target": snap_d.get("target")}
+                st.plotly_chart(charting.price_chart(candles, symbol=instr.symbol,
+                                markers=markers), use_container_width=True,
+                                key=f"px_{instr.symbol}")
+                cc1, cc2 = st.columns(2)
+                cc1.plotly_chart(charting.rsi_panel(candles), use_container_width=True,
+                                 key=f"rsi_{instr.symbol}")
+                cc2.plotly_chart(charting.macd_panel(candles), use_container_width=True,
+                                 key=f"macd_{instr.symbol}")
 
             if sig is not SignalType.HOLD and not globally_blocked:
                 if st.button(f"Select {instr.symbol} →", key=f"sel_{instr.symbol}"):
