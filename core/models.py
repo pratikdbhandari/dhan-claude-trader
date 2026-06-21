@@ -210,3 +210,36 @@ class PnLStatement:
     net_realized: float
     unrealized: float
     total_pnl: float
+
+
+# --------------------------------------------------------------------------- #
+# Backtest
+# --------------------------------------------------------------------------- #
+@dataclass
+class BacktestTrade:
+    symbol: str
+    side: str                 # BUY | SELL
+    entry_idx: int
+    exit_idx: int
+    entry_price: float
+    exit_price: float
+    gross_pnl: float
+    charges: float
+    net_pnl: float
+    exit_reason: str          # STOP | TARGET | TIME
+    regime: str
+    net_score: float
+
+
+@dataclass
+class BacktestResult:
+    trades: list[BacktestTrade]
+    n_trades: int
+    wins: int
+    win_rate: float
+    gross_pnl: float
+    net_pnl: float
+    profit_factor: float
+    expectancy: float
+    max_drawdown: float
+    calibration: list[dict]
