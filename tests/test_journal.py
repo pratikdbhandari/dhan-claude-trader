@@ -75,3 +75,22 @@ def test_to_legs_price_falls_back_to_entry(conn):
     conn.commit()
     leg = to_legs(conn, mode="PAPER")[0]
     assert leg["price"] == 200 and leg["segment"] == "equity_delivery"
+
+
+def test_consensus_json_is_a_readable_dict(conn):
+    from core.models import ConsensusSignal, ProviderSignal, SignalType
+    import json as _json
+    cs = ConsensusSignal(
+        instrument=_req().instrument, providers=[
+            ProviderSignal(provider="groq", signal=SignalType.BUY, confidence=70,
+                           entry=1, stop_loss=1, target=1, risk_reward_ratio=2.0,
+                           reasoning="x")],
+        consensus=SignalType.BUY, avg_confidence=70, agreement_pct=100,
+        indicator_snapshot={})
+    log_order(conn, _req(), OrderResult(ok=True, mode=TradeMode.PAPER, status="FILLED",
+              exec_price=2500.0), consensus=cs)
+    row = list_trades(conn)[0]
+    data = _json.loads(row["consensus_json"])
+    assert isinstance(data, dict)
+    assert data["providers"][0]["provider"] == "groq"
+    assert data["providers"][0]["signal"] == "BUY"

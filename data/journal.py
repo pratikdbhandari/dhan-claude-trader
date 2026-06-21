@@ -29,6 +29,22 @@ def init_db(path: str = "trades.db") -> sqlite3.Connection:
     return conn
 
 
+def _consensus_to_json(consensus) -> str | None:
+    """Serialize a ConsensusSignal into a JSON dict (so the EOD leaderboard can read
+    per-provider calls). Returns None if no consensus."""
+    if consensus is None:
+        return None
+    providers = [{"provider": p.provider, "signal": p.signal.value,
+                  "confidence": p.confidence}
+                 for p in getattr(consensus, "providers", [])]
+    return json.dumps({
+        "consensus": getattr(getattr(consensus, "consensus", None), "value", None),
+        "avg_confidence": getattr(consensus, "avg_confidence", None),
+        "agreement_pct": getattr(consensus, "agreement_pct", None),
+        "providers": providers,
+    })
+
+
 def log_order(conn: sqlite3.Connection, req: OrderRequest, result: OrderResult,
               consensus=None) -> int:
     instr = req.instrument
@@ -43,7 +59,7 @@ def log_order(conn: sqlite3.Connection, req: OrderRequest, result: OrderResult,
         "confidence": getattr(consensus, "avg_confidence", None),
         "entry": req.price, "stop_loss": req.stop_loss, "target": req.target,
         "rr_predicted": None, "reasoning": None,
-        "consensus_json": json.dumps(consensus, default=str) if consensus else None,
+        "consensus_json": _consensus_to_json(consensus),
         "dhan_order_id": result.dhan_order_id, "exec_status": result.status,
         "exec_price": result.exec_price, "error_message": result.error_message,
         "exit_price": None, "pnl": None, "rr_achieved": None, "closed_at": None,

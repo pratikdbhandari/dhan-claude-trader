@@ -28,6 +28,8 @@ def _leaderboard(closed: list[dict]) -> list[dict]:
             data = json.loads(cj)
         except (json.JSONDecodeError, TypeError):
             continue
+        if not isinstance(data, dict):
+            continue
         side = (t.get("side") or "").upper()
         winning = side if pnl > 0 else ("SELL" if side == "BUY" else "BUY")
         for p in (data.get("providers") or []):
