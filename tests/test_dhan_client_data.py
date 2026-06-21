@@ -54,3 +54,35 @@ def test_get_candles_day_uses_daily():
                                   security_id="1", kind="EQUITY"),
                        interval="day", lookback_days=30)
     assert sdk.calls[0][0] == "daily" and len(df) == 3
+
+class ExitSDK:
+    def __init__(self, net): self.net = net; self.placed = []
+    def get_positions(self):
+        return {"status": "success", "data": [
+            {"securityId": "2885", "netQty": self.net, "exchangeSegment": "NSE_EQ"}]}
+    def place_order(self, **kw):
+        self.placed.append(kw); return {"status": "success", "data": {"orderId": "E1"}}
+
+def _ri():
+    return Instrument(symbol="RELIANCE", exchange_segment="NSE_EQ",
+                      security_id="2885", kind="EQUITY")
+
+def test_exit_long_fires_opposite_sell_live():
+    c = DhanClient(sdk=ExitSDK(net=10), mode=TradeMode.LIVE)
+    res = c.exit_position(_ri())
+    assert res.ok and res.status == "PLACED"
+    assert c.sdk.placed[0]["transaction_type"] == "SELL"
+    assert c.sdk.placed[0]["quantity"] == 10
+
+def test_exit_flat_is_noop():
+    c = DhanClient(sdk=ExitSDK(net=0), mode=TradeMode.LIVE)
+    res = c.exit_position(_ri())
+    assert res.ok and res.status == "FLAT"
+    assert c.sdk.placed == []
+
+def test_exit_paper_does_not_call_sdk():
+    sdk = ExitSDK(net=5)
+    c = DhanClient(sdk=sdk, mode=TradeMode.PAPER)
+    res = c.exit_position(_ri())
+    assert res.ok and res.mode is TradeMode.PAPER
+    assert sdk.placed == []

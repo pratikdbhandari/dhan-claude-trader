@@ -105,6 +105,13 @@ class DhanClient:
             log.exception("get_candles failed")
             raise DhanError(f"Failed to fetch candles: {e}") from e
 
+    def get_holdings(self) -> list:
+        try:
+            resp = self.sdk.get_holdings()
+            return resp.get("data", []) if isinstance(resp, dict) else resp
+        except Exception as e:                       # noqa: BLE001
+            raise DhanError(f"Failed to fetch holdings: {e}") from e
+
     # ---- order writes (dry_run aware) ----
     def place_order(self, req: OrderRequest) -> OrderResult:
         if self.mode is TradeMode.PAPER:
@@ -126,5 +133,78 @@ class DhanClient:
                                dhan_order_id=oid, exec_price=req.price)
         except Exception as e:                       # noqa: BLE001
             log.exception("place_order failed")
+            return OrderResult(ok=False, mode=TradeMode.LIVE, status="ERROR",
+                               error_message=str(e))
+
+    def modify_order(self, order_id: str, **changes):
+        if self.mode is TradeMode.PAPER:
+            return OrderResult(ok=True, mode=TradeMode.PAPER, status="MODIFIED",
+                               dhan_order_id=order_id)
+        try:
+            self.sdk.modify_order(order_id=order_id, **changes)
+            return OrderResult(ok=True, mode=TradeMode.LIVE, status="MODIFIED",
+                               dhan_order_id=order_id)
+        except Exception as e:                       # noqa: BLE001
+            return OrderResult(ok=False, mode=TradeMode.LIVE, status="ERROR",
+                               error_message=str(e))
+
+    def cancel_order(self, order_id: str):
+        if self.mode is TradeMode.PAPER:
+            return OrderResult(ok=True, mode=TradeMode.PAPER, status="CANCELLED",
+                               dhan_order_id=order_id)
+        try:
+            self.sdk.cancel_order(order_id)
+            return OrderResult(ok=True, mode=TradeMode.LIVE, status="CANCELLED",
+                               dhan_order_id=order_id)
+        except Exception as e:                       # noqa: BLE001
+            return OrderResult(ok=False, mode=TradeMode.LIVE, status="ERROR",
+                               error_message=str(e))
+
+    def exit_position(self, instrument):
+        if self.mode is TradeMode.PAPER:
+            return OrderResult(ok=True, mode=TradeMode.PAPER, status="PLACED",
+                               dhan_order_id=f"PAPER-EXIT-{instrument.symbol}")
+        try:
+            positions = self.get_positions()
+            net = 0
+            for p in positions:
+                if str(p.get("securityId")) == str(instrument.security_id):
+                    net = int(p.get("netQty", 0))
+                    break
+            if net == 0:
+                return OrderResult(ok=True, mode=TradeMode.LIVE, status="FLAT")
+            side = "SELL" if net > 0 else "BUY"
+            resp = self.sdk.place_order(
+                security_id=instrument.security_id,
+                exchange_segment=instrument.exchange_segment,
+                transaction_type=side, quantity=abs(net),
+                order_type="MARKET", product_type="INTRADAY", price=0)
+            oid = (resp.get("data") or {}).get("orderId") if isinstance(resp, dict) else None
+            return OrderResult(ok=bool(oid), mode=TradeMode.LIVE, status="PLACED",
+                               dhan_order_id=oid)
+        except Exception as e:                       # noqa: BLE001
+            log.exception("exit_position failed")
+            return OrderResult(ok=False, mode=TradeMode.LIVE, status="ERROR",
+                               error_message=str(e))
+
+    def place_bracket_order(self, req):
+        if self.mode is TradeMode.PAPER:
+            return OrderResult(ok=True, mode=TradeMode.PAPER, status="PLACED",
+                               dhan_order_id=f"PAPER-BO-{req.instrument.symbol}",
+                               exec_price=req.price)
+        try:
+            entry = req.price or 0
+            profit = round(abs((req.target or entry) - entry), 2)
+            stop = round(abs(entry - (req.stop_loss or entry)), 2)
+            resp = self.sdk.place_order(
+                security_id=req.instrument.security_id,
+                exchange_segment=req.instrument.exchange_segment,
+                transaction_type=req.side.value, quantity=req.qty,
+                order_type=req.order_type.value, product_type="BO", price=entry,
+                bo_profit_value=profit, bo_stop_loss_Value=stop)
+            oid = (resp.get("data") or {}).get("orderId") if isinstance(resp, dict) else None
+            return OrderResult(ok=bool(oid), mode=TradeMode.LIVE, status="PLACED",
+                               dhan_order_id=oid, exec_price=entry)
+        except Exception as e:                       # noqa: BLE001
             return OrderResult(ok=False, mode=TradeMode.LIVE, status="ERROR",
                                error_message=str(e))
