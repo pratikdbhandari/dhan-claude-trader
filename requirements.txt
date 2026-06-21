@@ -17,3 +17,6 @@ openai==1.57.4
 
 # Utility
 requests==2.32.3
+
+# Fundamentals
+yfinance==1.4.1
