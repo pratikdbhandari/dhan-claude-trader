@@ -152,3 +152,61 @@ class ConfluenceSnapshot:
     buy_count: int
     sell_count: int
     hold_count: int
+
+
+# --------------------------------------------------------------------------- #
+# Accounting
+# --------------------------------------------------------------------------- #
+@dataclass
+class ChargeBreakdown:
+    brokerage: float
+    stt: float
+    exchange_txn: float
+    sebi: float
+    stamp: float
+    gst: float
+    total: float
+
+
+@dataclass
+class RealizedTrade:
+    symbol: str
+    segment: str
+    mode: str                 # PAPER | LIVE
+    qty: int
+    buy_price: float
+    sell_price: float
+    gross_pnl: float
+    charges: float
+    net_pnl: float
+    rr_predicted: Optional[float]
+    rr_achieved: Optional[float]
+    opened_at: str
+    closed_at: str
+
+
+@dataclass
+class Holding:
+    symbol: str
+    segment: str
+    mode: str
+    qty: int
+    avg_cost: float
+    invested: float
+    ltp: Optional[float]
+    current_value: Optional[float]
+    unrealized_pnl: Optional[float]
+
+
+@dataclass
+class PnLStatement:
+    mode: str
+    period: str               # day | month | all
+    gross_realized: float
+    brokerage: float
+    stt: float
+    exchange_sebi_stamp: float
+    gst: float
+    net_realized: float
+    unrealized: float
+    total_pnl: float
