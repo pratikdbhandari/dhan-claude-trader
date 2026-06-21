@@ -28,6 +28,10 @@ from data.journal import init_db, to_legs
 from services import instruments
 from services.briefing import morning_briefing
 from services import charting
+from services.quality_gate import apply_gate
+from services.sizing import quality_multiplier
+from services import alerts as alerts_mod
+from datetime import date as _date
 
 load_dotenv()
 
@@ -189,6 +193,9 @@ st.divider()
 equity = get_equity(mode, dhan)
 left, right = st.columns([2, 1])
 
+_today_events = ["EXPIRY"] if _date.today().weekday() == 3 else []
+_card_consensuses = []
+
 with left:
     st.markdown("#### Live signals")
     for instr in load_watchlist():
@@ -218,6 +225,13 @@ with left:
             sig = cs.consensus
             cls = {"BUY": "buy", "SELL": "sell", "HOLD": "hold"}[sig.value]
             snap_d = cs.indicator_snapshot
+            _card_consensuses.append(cs)
+
+            # Tri-Factor quality gate (fundamentals omitted here for speed; events from date)
+            gate = apply_gate(cs, fundamentals={}, event_flags=_today_events,
+                              kind=instr.kind)
+            qcolor = "#34d399" if gate.passed else ("#f87171" if gate.vetoed else "#fbbf24")
+            qlabel = ("PASS" if gate.passed else "VETO" if gate.vetoed else "LOW")
             chips = " ".join(
                 f"<span class='chip'>{p.provider} {p.signal.value[:1]}{p.confidence}</span>"
                 for p in cs.providers)
@@ -225,10 +239,13 @@ with left:
                 f"<div class='card'><b>{instr.symbol}</b> · "
                 f"<span class='muted'>{snap.regime.value}</span> &nbsp; "
                 f"<span class='{cls}'>{sig.value} {cs.avg_confidence}%</span> "
-                f"<span class='muted'>agree {cs.agreement_pct}%</span><br>"
+                f"<span class='muted'>agree {cs.agreement_pct}%</span> &nbsp; "
+                f"<span style='color:{qcolor};font-weight:700'>Quality {gate.score} {qlabel}</span><br>"
                 f"<span class='muted'>entry {snap_d.get('entry')} · SL {snap_d.get('stop_loss')} "
                 f"· tgt {snap_d.get('target')}</span><br>{chips}</div>",
                 unsafe_allow_html=True)
+            if gate.cautions:
+                st.caption("⚠ " + " · ".join(gate.cautions))
 
             with st.expander(f"📈 {instr.symbol} chart"):
                 markers = {"entry": snap_d.get("entry"),
@@ -244,10 +261,19 @@ with left:
                                  key=f"macd_{instr.symbol}")
 
             if sig is not SignalType.HOLD and not globally_blocked:
-                if st.button(f"Select {instr.symbol} →", key=f"sel_{instr.symbol}"):
-                    ss["pending"] = trade_controller.prepare_order(
+                disabled = not gate.passed
+                if st.button(f"Select {instr.symbol} →", key=f"sel_{instr.symbol}",
+                             disabled=disabled,
+                             help=None if gate.passed else "Blocked by quality gate"):
+                    pending = trade_controller.prepare_order(
                         cs, instr, equity=equity, cfg=cfg, day_pnl_value=dpnl,
                         open_count=open_count)
+                    # confidence-based sizing: scale DOWN only (1% cap stays the ceiling)
+                    mult = min(1.0, quality_multiplier(gate.score))
+                    if mult < 1.0:
+                        pending.order_request.qty = max(
+                            1, int(pending.order_request.qty * mult))
+                    ss["pending"] = pending
 
 with right:
     st.markdown("#### Open positions")
@@ -270,6 +296,17 @@ with right:
                                security_id=str(p.get("securityId")), kind="EQUITY")
             res = dhan.exit_position(instr)
             st.toast(f"Exit: {res.status}")
+
+# ---------------------------------------------------------------- alerts
+_rc_for_alert = None
+if globally_blocked:
+    from core.models import RiskCheck
+    _rc_for_alert = RiskCheck(allowed=False,
+                              reasons=["Daily loss / max positions limit reached"])
+_seen = ss.setdefault("alert_seen", set())
+for a in alerts_mod.collect(_card_consensuses, _rc_for_alert, seen=_seen):
+    icon = "🔴" if a.level == "CRITICAL" else "🔔"
+    st.toast(f"{icon} {a.message}")
 
 # ---------------------------------------------------------------- confirm dialog
 pending = ss.get("pending")
