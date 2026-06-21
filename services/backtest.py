@@ -35,7 +35,7 @@ def _trade_charges(segment: str, side: str, qty: int, entry: float,
 def simulate(df: pd.DataFrame, *, active_ids: list[int], style: str,
              segment: str = "equity_intraday", atr_sl: float = 1.0,
              atr_tgt: float = 2.0, time_cap: int = 20, warmup: int = 200,
-             qty: int = 1) -> BacktestResult:
+             qty: int = 1, trail_atr: float | None = None) -> BacktestResult:
     n = len(df)
     trades: list[BacktestTrade] = []
     if n <= warmup + 2:
@@ -62,22 +62,38 @@ def simulate(df: pd.DataFrame, *, active_ids: list[int], style: str,
             stop, target = entry + atr_sl * atr, entry - atr_tgt * atr
 
         exit_idx, exit_px, reason = i + 1, entry, "TIME"
+        best = entry                      # for trailing
         for j in range(i + 1, min(i + 1 + time_cap, n)):
             hi, lo = float(df["high"].iloc[j]), float(df["low"].iloc[j])
-            if side == "BUY":
-                if lo <= stop:
-                    exit_idx, exit_px, reason = j, stop, "STOP"
-                    break
-                if hi >= target:
-                    exit_idx, exit_px, reason = j, target, "TARGET"
-                    break
+            if trail_atr is not None:
+                # trailing stop: ratchet stop toward price; no fixed target (let it run)
+                if side == "BUY":
+                    if lo <= stop:
+                        exit_idx, exit_px, reason = j, stop, "TRAIL"
+                        break
+                    best = max(best, hi)
+                    stop = max(stop, best - trail_atr * atr)
+                else:
+                    if hi >= stop:
+                        exit_idx, exit_px, reason = j, stop, "TRAIL"
+                        break
+                    best = min(best, lo)
+                    stop = min(stop, best + trail_atr * atr)
             else:
-                if hi >= stop:
-                    exit_idx, exit_px, reason = j, stop, "STOP"
-                    break
-                if lo <= target:
-                    exit_idx, exit_px, reason = j, target, "TARGET"
-                    break
+                if side == "BUY":
+                    if lo <= stop:
+                        exit_idx, exit_px, reason = j, stop, "STOP"
+                        break
+                    if hi >= target:
+                        exit_idx, exit_px, reason = j, target, "TARGET"
+                        break
+                else:
+                    if hi >= stop:
+                        exit_idx, exit_px, reason = j, stop, "STOP"
+                        break
+                    if lo <= target:
+                        exit_idx, exit_px, reason = j, target, "TARGET"
+                        break
             exit_idx, exit_px = j, float(df["close"].iloc[j])
 
         gross = round((exit_px - entry) * qty * (1 if side == "BUY" else -1), 2)
@@ -131,6 +147,14 @@ def split_eval(df: pd.DataFrame, *, train_frac: float = 0.7, **kw) -> dict:
     cut = int(len(df) * train_frac)
     return {"in_sample": simulate(df.iloc[:cut], **kw),
             "out_of_sample": simulate(df.iloc[cut:].reset_index(drop=True), **kw)}
+
+
+def compare_exits(df: pd.DataFrame, *, trail_atr: float = 2.0, **kw) -> dict:
+    """A/B the exit model out-of-sample: fixed stop/target vs ATR-trailing.
+    Use to decide whether trailing actually improves expectancy before going live."""
+    fixed = split_eval(df, trail_atr=None, **kw)
+    trail = split_eval(df, trail_atr=trail_atr, **kw)
+    return {"fixed": fixed, "trailing": trail}
 
 
 def profit_probability(net_score: float, regime: str, calibration: list[dict],
