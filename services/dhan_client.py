@@ -32,7 +32,22 @@ def _walk_for_price(obj):
     return None
 
 
+def _candles_to_df(resp):
+    import pandas as pd
+    data = resp.get("data", resp) if isinstance(resp, dict) else {}
+    cols = ["open", "high", "low", "close", "volume"]
+    if not all(k in data for k in cols):
+        return pd.DataFrame(columns=cols)
+    frame = {k: data[k] for k in cols}
+    if "timestamp" in data:
+        frame["timestamp"] = data["timestamp"]
+    return pd.DataFrame(frame)
+
+
 class DhanClient:
+    _INSTRUMENT_TYPE = {"EQUITY": "EQUITY", "INDEX": "INDEX",
+                        "FUT": "FUTIDX", "OPT": "OPTIDX"}
+
     def __init__(self, sdk: Any = None, mode: TradeMode = TradeMode.PAPER,
                  client_id: Optional[str] = None, access_token: Optional[str] = None):
         if sdk is None:
@@ -70,6 +85,25 @@ class DhanClient:
         except Exception as e:                       # noqa: BLE001
             log.exception("get_ltp failed")
             raise DhanError(f"Failed to fetch LTP: {e}") from e
+
+    def get_candles(self, instrument, interval, lookback_days: int = 5):
+        from datetime import datetime, timedelta
+        to_date = datetime.now().strftime("%Y-%m-%d")
+        from_date = (datetime.now() - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
+        itype = self._INSTRUMENT_TYPE.get(instrument.kind.upper(), "EQUITY")
+        try:
+            if interval == "day":
+                resp = self.sdk.historical_daily_data(
+                    instrument.security_id, instrument.exchange_segment, itype,
+                    from_date, to_date)
+            else:
+                resp = self.sdk.intraday_minute_data(
+                    instrument.security_id, instrument.exchange_segment, itype,
+                    from_date, to_date, interval=int(interval))
+            return _candles_to_df(resp)
+        except Exception as e:                       # noqa: BLE001
+            log.exception("get_candles failed")
+            raise DhanError(f"Failed to fetch candles: {e}") from e
 
     # ---- order writes (dry_run aware) ----
     def place_order(self, req: OrderRequest) -> OrderResult:
