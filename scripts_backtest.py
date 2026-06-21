@@ -14,7 +14,7 @@ from core.models import Instrument, TradeMode
 from services.dhan_client import DhanClient, DhanError
 from services import instruments
 from services.backtest import (simulate, split_eval, save_calibration,
-                               score_strategies, prune_candidates)
+                               score_strategies, prune_candidates, compare_exits)
 from services.backtest_data import load_candles
 import services.strategies.trend          # noqa: F401
 import services.strategies.mean_reversion  # noqa: F401
@@ -92,6 +92,24 @@ def main():
             print("    " + ", ".join(f"{r['id']}:{r['name']}" for r in prune))
         lines.append("## Per-strategy prune candidates")
         lines.append(", ".join(f"{r['id']}:{r['name']}" for r in prune) or "none")
+
+        # fixed vs trailing exit comparison (out-of-sample) on all_on
+        cmp = compare_exits(df, active_ids=PRESETS["all_on"], style=style,
+                            segment=segment, warmup=200, time_cap=20, trail_atr=2.0)
+        print("  --- exit model A/B (out-of-sample) ---")
+        lines.append("## Exit model A/B (out-of-sample)")
+        for label in ("fixed", "trailing"):
+            o = cmp[label]["out_of_sample"]
+            row = (f"{label:<9} trades {o.n_trades} · win {o.win_rate}% · "
+                   f"net ₹{o.net_pnl:,.0f} · exp ₹{o.expectancy} · "
+                   f"PF {'∞' if o.profit_factor == float('inf') else o.profit_factor}")
+            print(f"    {row}")
+            lines.append(f"- {row}")
+        verdict = ("trailing" if cmp["trailing"]["out_of_sample"].expectancy
+                   > cmp["fixed"]["out_of_sample"].expectancy else "fixed")
+        print(f"    => better OOS expectancy: {verdict}")
+        lines.append(f"- Better OOS expectancy: **{verdict}**")
+
         Path(f"reports/backtest_{instr.symbol}.md").write_text(
             "\n".join(lines), encoding="utf-8")
 
