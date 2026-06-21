@@ -80,3 +80,22 @@ def stats(conn: sqlite3.Connection, mode: str) -> dict:
         "avg_rr_predicted": round(sum(rp) / len(rp), 2) if rp else 0.0,
         "avg_rr_achieved": round(sum(ra) / len(ra), 2) if ra else 0.0,
     }
+
+
+def to_legs(conn: sqlite3.Connection, mode: str) -> list[dict]:
+    rows = conn.execute(
+        "SELECT * FROM trades WHERE mode=? AND exec_status IN ('FILLED','PLACED') "
+        "ORDER BY id ASC", (mode,)).fetchall()
+    legs = []
+    for r in rows:
+        price = r["exec_price"] if r["exec_price"] is not None else r["entry"]
+        if price is None or r["qty"] is None or r["qty"] <= 0:
+            continue
+        legs.append({
+            "symbol": r["symbol"],
+            "segment": to_segment(r["product_type"], r["kind"]),
+            "side": r["side"], "qty": r["qty"], "price": price,
+            "mode": r["mode"], "timestamp": r["created_at"],
+            "rr_predicted": r["rr_predicted"],
+        })
+    return legs

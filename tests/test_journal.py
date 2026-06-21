@@ -50,3 +50,28 @@ def test_stats_win_rate_and_avg_rr(conn):
 def test_stats_empty(conn):
     s = stats(conn, mode="PAPER")
     assert s["trades"] == 0 and s["win_rate"] == 0.0
+
+from data.journal import to_legs
+
+def test_to_legs_filled_only_with_segment(conn):
+    conn.execute("""INSERT INTO trades (created_at, mode, symbol, security_id,
+        product_type, kind, side, order_type, qty, entry, exec_price, exec_status)
+        VALUES ('2026-06-21T10:00','PAPER','X','1','INTRADAY','EQUITY','BUY','MARKET',
+        10, 100, 101, 'PLACED')""")
+    conn.execute("""INSERT INTO trades (created_at, mode, symbol, side, qty,
+        exec_status) VALUES ('t','PAPER','Y','BUY',5,'REJECTED')""")
+    conn.commit()
+    legs = to_legs(conn, mode="PAPER")
+    assert len(legs) == 1
+    leg = legs[0]
+    assert leg["symbol"] == "X" and leg["segment"] == "equity_intraday"
+    assert leg["price"] == 101 and leg["qty"] == 10 and leg["side"] == "BUY"
+    assert leg["mode"] == "PAPER" and leg["timestamp"] == "2026-06-21T10:00"
+
+def test_to_legs_price_falls_back_to_entry(conn):
+    conn.execute("""INSERT INTO trades (created_at, mode, symbol, security_id,
+        product_type, kind, side, qty, entry, exec_price, exec_status)
+        VALUES ('t','PAPER','Z','1','CNC','EQUITY','BUY',1, 200, NULL, 'FILLED')""")
+    conn.commit()
+    leg = to_legs(conn, mode="PAPER")[0]
+    assert leg["price"] == 200 and leg["segment"] == "equity_delivery"
