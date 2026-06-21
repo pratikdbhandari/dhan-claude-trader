@@ -25,6 +25,7 @@ import services.strategies.volume  # noqa: F401
 import services.strategies.structure  # noqa: F401
 from services import indicators as ind
 from data.journal import init_db, to_legs
+from services import instruments
 
 load_dotenv()
 
@@ -66,12 +67,27 @@ def get_client(mode: str) -> DhanClient:
                       mode=TradeMode(mode))
 
 
+@st.cache_resource
+def get_instrument_index():
+    """Download + cache the Dhan scrip master once; empty index on failure."""
+    try:
+        from pathlib import Path as _P
+        cache = _P("data/instrument_master.csv")
+        text = cache.read_text(encoding="utf-8") if cache.exists() \
+            else instruments.download_master()
+        return instruments.build_index(text)
+    except Exception as e:                     # noqa: BLE001
+        st.caption(f"instrument master unavailable: {e}")
+        return {}
+
+
 def load_watchlist() -> list[Instrument]:
     data = json.loads(Path("watchlist.json").read_text())
-    return [Instrument(symbol=i["symbol"], exchange_segment=i["exchange_segment"],
-                       security_id=i.get("security_id"), lot_size=i.get("lot_size", 1),
-                       kind=i.get("kind", "EQUITY"))
-            for i in data["instruments"]]
+    wl = [Instrument(symbol=i["symbol"], exchange_segment=i["exchange_segment"],
+                     security_id=i.get("security_id"), lot_size=i.get("lot_size", 1),
+                     kind=i.get("kind", "EQUITY"))
+          for i in data["instruments"]]
+    return instruments.resolve_watchlist(wl, get_instrument_index())
 
 
 def get_equity(mode: str, dhan: DhanClient) -> float:
