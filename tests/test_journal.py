@@ -28,3 +28,25 @@ def test_list_filters_by_mode(conn):
     log_order(conn, _req(), OrderResult(ok=True, mode=TradeMode.LIVE, status="PLACED"))
     assert len(list_trades(conn, mode="PAPER")) == 1
     assert len(list_trades(conn, mode="LIVE")) == 1
+
+from data.journal import stats
+
+def _close_row(conn, pnl, rr_pred, rr_ach):
+    conn.execute("""INSERT INTO trades (created_at, mode, symbol, side, qty,
+        pnl, rr_predicted, rr_achieved, exec_status)
+        VALUES ('t','PAPER','X','BUY',1,?,?,?,'FILLED')""", (pnl, rr_pred, rr_ach))
+    conn.commit()
+
+def test_stats_win_rate_and_avg_rr(conn):
+    _close_row(conn, 100, 2.0, 1.8)
+    _close_row(conn, -50, 2.0, -1.0)
+    s = stats(conn, mode="PAPER")
+    assert s["trades"] == 2
+    assert s["wins"] == 1
+    assert s["win_rate"] == 50.0
+    assert s["avg_rr_predicted"] == 2.0
+    assert s["avg_rr_achieved"] == pytest.approx(0.4)
+
+def test_stats_empty(conn):
+    s = stats(conn, mode="PAPER")
+    assert s["trades"] == 0 and s["win_rate"] == 0.0

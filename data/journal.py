@@ -62,3 +62,21 @@ def list_trades(conn: sqlite3.Connection, mode: str | None = None) -> list[dict]
     else:
         rows = conn.execute("SELECT * FROM trades ORDER BY id DESC").fetchall()
     return [dict(r) for r in rows]
+
+
+def stats(conn: sqlite3.Connection, mode: str) -> dict:
+    rows = conn.execute(
+        "SELECT pnl, rr_predicted, rr_achieved FROM trades "
+        "WHERE mode=? AND pnl IS NOT NULL", (mode,)).fetchall()
+    n = len(rows)
+    if n == 0:
+        return {"trades": 0, "wins": 0, "win_rate": 0.0,
+                "avg_rr_predicted": 0.0, "avg_rr_achieved": 0.0}
+    wins = sum(1 for r in rows if r["pnl"] > 0)
+    rp = [r["rr_predicted"] for r in rows if r["rr_predicted"] is not None]
+    ra = [r["rr_achieved"] for r in rows if r["rr_achieved"] is not None]
+    return {
+        "trades": n, "wins": wins, "win_rate": round(wins / n * 100, 2),
+        "avg_rr_predicted": round(sum(rp) / len(rp), 2) if rp else 0.0,
+        "avg_rr_achieved": round(sum(ra) / len(ra), 2) if ra else 0.0,
+    }
