@@ -13,33 +13,54 @@ def _charge_per_unit(leg: dict) -> float:
 
 def realized_trades(legs: list[dict], mode: str) -> list[RealizedTrade]:
     book = [l for l in legs if l["mode"] == mode and l["qty"] > 0]
-    lots: dict[str, deque] = defaultdict(deque)
+    longs: dict[str, deque] = defaultdict(deque)
+    shorts: dict[str, deque] = defaultdict(deque)
     out: list[RealizedTrade] = []
 
     for leg in book:
         sym = leg["symbol"]
         cpu = _charge_per_unit(leg)
-        if leg["side"].upper() == "BUY":
-            lots[sym].append({"qty": leg["qty"], "price": leg["price"],
-                              "cpu": cpu, "ts": leg["timestamp"],
-                              "rr": leg["rr_predicted"]})
-            continue
-        sell_qty = leg["qty"]
-        while sell_qty > 0 and lots[sym]:
-            lot = lots[sym][0]
-            matched = min(sell_qty, lot["qty"])
-            gross = round((leg["price"] - lot["price"]) * matched, 2)
-            charges = round(matched * lot["cpu"] + matched * cpu, 2)
-            out.append(RealizedTrade(
-                symbol=sym, segment=leg["segment"], mode=mode, qty=matched,
-                buy_price=lot["price"], sell_price=leg["price"],
-                gross_pnl=gross, charges=charges, net_pnl=round(gross - charges, 2),
-                rr_predicted=lot["rr"], rr_achieved=None,
-                opened_at=lot["ts"], closed_at=leg["timestamp"]))
-            lot["qty"] -= matched
-            sell_qty -= matched
-            if lot["qty"] == 0:
-                lots[sym].popleft()
+        side = leg["side"].upper()
+        qty = leg["qty"]
+
+        if side == "BUY":
+            while qty > 0 and shorts[sym]:
+                lot = shorts[sym][0]
+                matched = min(qty, lot["qty"])
+                gross = round((lot["price"] - leg["price"]) * matched, 2)
+                charges = round(matched * lot["cpu"] + matched * cpu, 2)
+                out.append(RealizedTrade(
+                    symbol=sym, segment=leg["segment"], mode=mode, qty=matched,
+                    buy_price=leg["price"], sell_price=lot["price"],
+                    gross_pnl=gross, charges=charges, net_pnl=round(gross - charges, 2),
+                    rr_predicted=lot["rr"], rr_achieved=None,
+                    opened_at=lot["ts"], closed_at=leg["timestamp"]))
+                lot["qty"] -= matched
+                qty -= matched
+                if lot["qty"] == 0:
+                    shorts[sym].popleft()
+            if qty > 0:
+                longs[sym].append({"qty": qty, "price": leg["price"], "cpu": cpu,
+                                   "ts": leg["timestamp"], "rr": leg["rr_predicted"]})
+        else:
+            while qty > 0 and longs[sym]:
+                lot = longs[sym][0]
+                matched = min(qty, lot["qty"])
+                gross = round((leg["price"] - lot["price"]) * matched, 2)
+                charges = round(matched * lot["cpu"] + matched * cpu, 2)
+                out.append(RealizedTrade(
+                    symbol=sym, segment=leg["segment"], mode=mode, qty=matched,
+                    buy_price=lot["price"], sell_price=leg["price"],
+                    gross_pnl=gross, charges=charges, net_pnl=round(gross - charges, 2),
+                    rr_predicted=lot["rr"], rr_achieved=None,
+                    opened_at=lot["ts"], closed_at=leg["timestamp"]))
+                lot["qty"] -= matched
+                qty -= matched
+                if lot["qty"] == 0:
+                    longs[sym].popleft()
+            if qty > 0:
+                shorts[sym].append({"qty": qty, "price": leg["price"], "cpu": cpu,
+                                    "ts": leg["timestamp"], "rr": leg["rr_predicted"]})
     return out
 from core.models import Holding
 
