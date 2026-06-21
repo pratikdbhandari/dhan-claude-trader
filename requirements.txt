@@ -20,3 +20,6 @@ requests==2.32.3
 
 # Fundamentals
 yfinance==1.4.1
+
+# Charts
+plotly==6.8.0
