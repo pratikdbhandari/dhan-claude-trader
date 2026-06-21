@@ -13,7 +13,8 @@ load_dotenv()
 from core.models import Instrument, TradeMode
 from services.dhan_client import DhanClient, DhanError
 from services import instruments
-from services.backtest import simulate, split_eval, save_calibration
+from services.backtest import (simulate, split_eval, save_calibration,
+                               score_strategies, prune_candidates)
 from services.backtest_data import load_candles
 import services.strategies.trend          # noqa: F401
 import services.strategies.mean_reversion  # noqa: F401
@@ -74,6 +75,25 @@ def main():
         full = simulate(df, active_ids=PRESETS["all_on"], style=style,
                         segment=segment, warmup=200)
         save_calibration(full, path=f"data/calibration_{instr.symbol}.json")
+
+        # per-strategy scoring + prune candidates (data-driven)
+        scored = score_strategies(df, style=style, segment=segment, warmup=200,
+                                  time_cap=20)
+        print("  --- per-strategy (ranked by OOS expectancy) ---")
+        for r in scored[:5]:
+            print(f"    TOP  [{r['id']:>2}] {r['name']:<22} OOS exp ₹{r['oos_exp']} "
+                  f"({r['oos_trades']} trades, win {r['oos_win']}%)")
+        for r in scored[-5:]:
+            print(f"    LOW  [{r['id']:>2}] {r['name']:<22} OOS exp ₹{r['oos_exp']} "
+                  f"({r['oos_trades']} trades, win {r['oos_win']}%)")
+        prune = prune_candidates(scored)
+        if prune:
+            print("  PRUNE CANDIDATES (negative OOS expectancy, enough samples):")
+            print("    " + ", ".join(f"{r['id']}:{r['name']}" for r in prune))
+        lines.append("## Per-strategy prune candidates")
+        lines.append(", ".join(f"{r['id']}:{r['name']}" for r in prune) or "none")
+        Path(f"reports/backtest_{instr.symbol}.md").write_text(
+            "\n".join(lines), encoding="utf-8")
 
 
 if __name__ == "__main__":
