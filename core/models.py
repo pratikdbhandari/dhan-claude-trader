@@ -121,3 +121,34 @@ class OrderResult:
     status: str = ""           # PLACED | REJECTED | FILLED | ERROR
     exec_price: Optional[float] = None
     error_message: Optional[str] = None
+
+
+# --------------------------------------------------------------------------- #
+# Strategy engine
+# --------------------------------------------------------------------------- #
+class Regime(str, Enum):
+    TRENDING = "TRENDING"
+    RANGING = "RANGING"
+    VOLATILE = "VOLATILE"
+
+
+@dataclass
+class StrategyVote:
+    strategy_id: int
+    name: str
+    category: str                 # trend | mean_reversion | breakout | volume | structure
+    vote: SignalType
+    strength: int                 # 0-100
+    detail: str = ""              # human-readable why
+
+
+@dataclass
+class ConfluenceSnapshot:
+    regime: Regime
+    votes: list[StrategyVote]
+    category_scores: dict[str, float]   # category -> net score [-1..1]
+    net_score: float                    # overall [-1..1], BUY>0 SELL<0
+    bias: SignalType                    # BUY|SELL|HOLD from net_score thresholds
+    buy_count: int
+    sell_count: int
+    hold_count: int
