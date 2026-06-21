@@ -42,3 +42,15 @@ def compute(segment: str, side: str, qty: int, price: float, mode: str) -> Charg
         _r(brokerage), _r(stt), _r(exchange_txn), _r(sebi), _r(stamp), _r(gst))
     total = _r(brokerage + stt + exchange_txn + sebi + stamp + gst)
     return ChargeBreakdown(brokerage, stt, exchange_txn, sebi, stamp, gst, total)
+
+
+def reconcile(breakdown: ChargeBreakdown, dhan_actuals: dict) -> ChargeBreakdown:
+    """Override any provided component with the broker's actual value, then
+    recompute total. Unprovided components are preserved. Empty dict => no-op."""
+    fields = ("brokerage", "stt", "exchange_txn", "sebi", "stamp", "gst")
+    updates = {k: _r(dhan_actuals[k]) for k in fields if k in dhan_actuals}
+    if not updates:
+        return breakdown
+    merged = replace(breakdown, **updates)
+    total = _r(sum(getattr(merged, f) for f in fields))
+    return replace(merged, total=total)
