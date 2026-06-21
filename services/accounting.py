@@ -81,3 +81,43 @@ def portfolio(legs: list[dict], mode: str, ltp_fn) -> list[Holding]:
                            qty=qty, avg_cost=avg_cost, invested=invested,
                            ltp=ltp, current_value=cur, unrealized_pnl=unreal))
     return out
+from core.models import PnLStatement
+
+
+def _filter_period(legs: list[dict], period: str, period_key) -> list[dict]:
+    if period == "all" or not period_key:
+        return legs
+    return [l for l in legs if str(l["timestamp"]).startswith(period_key)]
+
+
+def pnl_statement(legs: list[dict], mode: str, period: str, period_key,
+                  ltp_fn) -> PnLStatement:
+    scoped = _filter_period(legs, period, period_key)
+    realized = realized_trades(scoped, mode)
+
+    gross = round(sum(r.gross_pnl for r in realized), 2)
+    net = round(sum(r.net_pnl for r in realized), 2)
+
+    brokerage = stt = ex_sebi_stamp = gst = 0.0
+    book = [l for l in scoped if l["mode"] == mode and l["qty"] > 0]
+    realized_syms = {r.symbol for r in realized}
+    for leg in book:
+        if leg["symbol"] not in realized_syms:
+            continue
+        c = compute(leg["segment"], leg["side"], leg["qty"], leg["price"], leg["mode"])
+        brokerage += c.brokerage
+        stt += c.stt
+        ex_sebi_stamp += c.exchange_txn + c.sebi + c.stamp
+        gst += c.gst
+    brokerage, stt, ex_sebi_stamp, gst = (round(brokerage, 2), round(stt, 2),
+                                          round(ex_sebi_stamp, 2), round(gst, 2))
+
+    holdings = portfolio(scoped, mode, ltp_fn)
+    unreal = round(sum(h.unrealized_pnl for h in holdings
+                       if h.unrealized_pnl is not None), 2)
+
+    return PnLStatement(mode=mode, period=period, gross_realized=gross,
+                        brokerage=brokerage, stt=stt,
+                        exchange_sebi_stamp=ex_sebi_stamp, gst=gst,
+                        net_realized=net, unrealized=unreal,
+                        total_pnl=round(net + unreal, 2))
