@@ -26,6 +26,7 @@ import services.strategies.structure  # noqa: F401
 from services import indicators as ind
 from data.journal import init_db, to_legs
 from services import instruments
+from services.briefing import morning_briefing
 
 load_dotenv()
 
@@ -153,6 +154,33 @@ r4.markdown(("**Orders**<br>🔴 BLOCKED" if globally_blocked else "**Orders**<b
             unsafe_allow_html=True)
 if globally_blocked:
     st.error("New orders blocked: risk limit reached.")
+
+# ---------------------------------------------------------------- morning briefing
+with st.expander("🌅 Morning Briefing — strategy of the day", expanded=False):
+    if st.button("Generate briefing"):
+        wl_instr = load_watchlist()
+        index = next((i for i in wl_instr if i.kind == "INDEX" and i.security_id), None)
+        if index is None:
+            st.warning("No resolved INDEX instrument in watchlist (need NIFTY/BANKNIFTY "
+                       "security_id) to read regime.")
+        else:
+            vix_idx = instruments.resolve(
+                Instrument(symbol="INDIA VIX", exchange_segment="IDX_I",
+                           security_id=None, kind="INDEX"), get_instrument_index())
+            try:
+                brief = morning_briefing(
+                    index, vix_instrument=vix_idx if vix_idx.security_id else None,
+                    dhan_client=dhan, mode=ss["signal_source"])
+                sel = brief["selection"]
+                st.markdown(f"### ▶ Run preset: **{sel.preset}**")
+                st.write(brief["narrative"])
+                st.markdown("**Why:** " + " · ".join(sel.reasons))
+                if sel.cautions:
+                    st.warning("⚠ " + "  ".join(sel.cautions))
+                for n in sel.extra_notes:
+                    st.info(n)
+            except Exception as e:                 # noqa: BLE001
+                st.error(f"Briefing failed: {e}")
 
 st.divider()
 
