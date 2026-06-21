@@ -142,6 +142,34 @@ def profit_probability(net_score: float, regime: str, calibration: list[dict],
     return None
 
 
+def score_strategies(df: pd.DataFrame, *, style: str, segment: str,
+                     ids: list[int] | None = None, **kw) -> list[dict]:
+    """Backtest each strategy SOLO and rank by out-of-sample expectancy. Use to
+    prune consistently negative-expectancy strategies (data-driven, not opinion).
+    A strategy that never fires in this data's regime shows 0 trades."""
+    from services.strategies import base
+    ids = ids or list(range(1, 30))
+    rows = []
+    for sid in ids:
+        ev = split_eval(df, active_ids=[sid], style=style, segment=segment, **kw)
+        ins, oos = ev["in_sample"], ev["out_of_sample"]
+        spec = base.REGISTRY.get(sid)
+        rows.append({
+            "id": sid, "name": spec.name if spec else "?",
+            "category": spec.category if spec else "?",
+            "is_trades": ins.n_trades, "is_win": ins.win_rate, "is_exp": ins.expectancy,
+            "oos_trades": oos.n_trades, "oos_win": oos.win_rate,
+            "oos_exp": oos.expectancy, "oos_net": oos.net_pnl,
+        })
+    return sorted(rows, key=lambda r: r["oos_exp"], reverse=True)
+
+
+def prune_candidates(scored: list[dict], min_trades: int = 5) -> list[dict]:
+    """Strategies with enough samples but negative out-of-sample expectancy."""
+    return [r for r in scored
+            if r["oos_trades"] >= min_trades and r["oos_exp"] < 0]
+
+
 def save_calibration(result: BacktestResult, path: str = "data/calibration.json") -> str:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
