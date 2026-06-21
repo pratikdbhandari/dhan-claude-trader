@@ -1,0 +1,30 @@
+# Secrets — NEVER commit
+.env
+*.key
+
+# Local data
+*.db
+*.sqlite3
+cache/
+reports/*.csv
+reports/*.md
+!reports/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Dhan instrument master (large, re-downloadable)
+data/instrument_master.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

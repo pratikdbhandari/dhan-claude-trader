@@ -1,0 +1,41 @@
+{
+  "_comment": "AI provider registry. Add a new OpenAI-compatible provider by appending an entry. 'kind': 'anthropic' uses the anthropic SDK; 'openai' uses the openai SDK against base_url. Only providers with enabled=true AND a non-empty key (from key_env) are called.",
+  "providers": [
+    {
+      "name": "claude",
+      "label": "Claude (Anthropic)",
+      "kind": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "base_url": null,
+      "key_env": "ANTHROPIC_API_KEY",
+      "enabled": true
+    },
+    {
+      "name": "groq",
+      "label": "Groq",
+      "kind": "openai",
+      "model": "llama-3.3-70b-versatile",
+      "base_url": "https://api.groq.com/openai/v1",
+      "key_env": "GROQ_API_KEY",
+      "enabled": true
+    },
+    {
+      "name": "cerebras",
+      "label": "Cerebras",
+      "kind": "openai",
+      "model": "llama-3.3-70b",
+      "base_url": "https://api.cerebras.ai/v1",
+      "key_env": "CEREBRAS_API_KEY",
+      "enabled": true
+    },
+    {
+      "name": "mistral",
+      "label": "Mistral",
+      "kind": "openai",
+      "model": "mistral-large-latest",
+      "base_url": "https://api.mistral.ai/v1",
+      "key_env": "MISTRAL_API_KEY",
+      "enabled": true
+    }
+  ]
+}

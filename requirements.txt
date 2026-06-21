@@ -1,0 +1,19 @@
+# Dhan-Claude Trader — pinned for Python 3.13
+# Core app
+streamlit==1.40.2
+python-dotenv==1.0.1
+
+# Broker
+dhanhq==2.0.2
+
+# Indicators
+ta==0.11.0
+pandas==2.2.3
+numpy==2.1.3
+
+# AI providers (unified: openai SDK serves Groq/Mistral/Cerebras via base_url)
+anthropic==0.40.0
+openai==1.57.4
+
+# Utility
+requests==2.32.3

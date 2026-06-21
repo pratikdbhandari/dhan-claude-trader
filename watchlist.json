@@ -1,0 +1,9 @@
+{
+  "_comment": "Instruments to watch. security_id + exchange_segment are resolved from the Dhan instrument master by services/instruments.py. Fill security_id after first master download, or leave null to resolve by symbol+segment at runtime.",
+  "instruments": [
+    { "symbol": "NIFTY",     "exchange_segment": "IDX_I",  "security_id": null, "lot_size": 75,  "kind": "INDEX"  },
+    { "symbol": "BANKNIFTY", "exchange_segment": "IDX_I",  "security_id": null, "lot_size": 35,  "kind": "INDEX"  },
+    { "symbol": "RELIANCE",  "exchange_segment": "NSE_EQ", "security_id": null, "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "HDFCBANK",  "exchange_segment": "NSE_EQ", "security_id": null, "lot_size": 1,   "kind": "EQUITY" }
+  ]
+}
