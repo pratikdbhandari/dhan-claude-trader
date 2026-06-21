@@ -1,0 +1,7 @@
+{
+  "_comment": "Indian charge rates as fractions (0.001 = 0.1%). EDITABLE; verify against your Dhan contract note. Not the risk-limit defaults.",
+  "equity_delivery": {"brokerage_flat": 0,  "brokerage_pct": 0,      "stt_buy": 0.001,  "stt_sell": 0.001,  "exchange_txn": 0.0000297, "sebi": 0.000001, "stamp_buy": 0.00015, "gst": 0.18},
+  "equity_intraday": {"brokerage_flat": 20, "brokerage_pct": 0.0003, "stt_buy": 0,      "stt_sell": 0.00025, "exchange_txn": 0.0000297, "sebi": 0.000001, "stamp_buy": 0.00003, "gst": 0.18},
+  "futures":         {"brokerage_flat": 20, "brokerage_pct": 0.0003, "stt_buy": 0,      "stt_sell": 0.0002, "exchange_txn": 0.0000173, "sebi": 0.000001, "stamp_buy": 0.00002, "gst": 0.18},
+  "options":         {"brokerage_flat": 20, "brokerage_pct": 0,      "stt_buy": 0,      "stt_sell": 0.001,  "exchange_txn": 0.0003503, "sebi": 0.000001, "stamp_buy": 0.00003, "gst": 0.18}
+}

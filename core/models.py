@@ -121,3 +121,92 @@ class OrderResult:
     status: str = ""           # PLACED | REJECTED | FILLED | ERROR
     exec_price: Optional[float] = None
     error_message: Optional[str] = None
+
+
+# --------------------------------------------------------------------------- #
+# Strategy engine
+# --------------------------------------------------------------------------- #
+class Regime(str, Enum):
+    TRENDING = "TRENDING"
+    RANGING = "RANGING"
+    VOLATILE = "VOLATILE"
+
+
+@dataclass
+class StrategyVote:
+    strategy_id: int
+    name: str
+    category: str                 # trend | mean_reversion | breakout | volume | structure
+    vote: SignalType
+    strength: int                 # 0-100
+    detail: str = ""              # human-readable why
+
+
+@dataclass
+class ConfluenceSnapshot:
+    regime: Regime
+    votes: list[StrategyVote]
+    category_scores: dict[str, float]   # category -> net score [-1..1]
+    net_score: float                    # overall [-1..1], BUY>0 SELL<0
+    bias: SignalType                    # BUY|SELL|HOLD from net_score thresholds
+    buy_count: int
+    sell_count: int
+    hold_count: int
+
+
+# --------------------------------------------------------------------------- #
+# Accounting
+# --------------------------------------------------------------------------- #
+@dataclass
+class ChargeBreakdown:
+    brokerage: float
+    stt: float
+    exchange_txn: float
+    sebi: float
+    stamp: float
+    gst: float
+    total: float
+
+
+@dataclass
+class RealizedTrade:
+    symbol: str
+    segment: str
+    mode: str                 # PAPER | LIVE
+    qty: int
+    buy_price: float
+    sell_price: float
+    gross_pnl: float
+    charges: float
+    net_pnl: float
+    rr_predicted: Optional[float]
+    rr_achieved: Optional[float]
+    opened_at: str
+    closed_at: str
+
+
+@dataclass
+class Holding:
+    symbol: str
+    segment: str
+    mode: str
+    qty: int
+    avg_cost: float
+    invested: float
+    ltp: Optional[float]
+    current_value: Optional[float]
+    unrealized_pnl: Optional[float]
+
+
+@dataclass
+class PnLStatement:
+    mode: str
+    period: str               # day | month | all
+    gross_realized: float
+    brokerage: float
+    stt: float
+    exchange_sebi_stamp: float
+    gst: float
+    net_realized: float
+    unrealized: float
+    total_pnl: float
