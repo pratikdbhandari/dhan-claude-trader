@@ -1,6 +1,28 @@
+import importlib
 import numpy as np
 import pandas as pd
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _ensure_strategies_registered():
+    """Repopulate the strategy REGISTRY before every test.
+
+    test_strategy_base.py calls REGISTRY.clear(), which (depending on file
+    order) would otherwise leave later strategy tests with an empty registry.
+    Reloading re-runs the @strategy decorators so the 29 strategies are present
+    for any test that needs them; tests that deliberately clear still run after
+    this fixture, so their assertions are unaffected.
+    """
+    from services.strategies import base
+    for mod in ("trend", "mean_reversion", "breakout", "volume", "structure"):
+        try:
+            m = importlib.import_module(f"services.strategies.{mod}")
+            importlib.reload(m)
+        except Exception:
+            pass
+    yield
+
 
 def _ohlcv(close: np.ndarray) -> pd.DataFrame:
     n = len(close)
