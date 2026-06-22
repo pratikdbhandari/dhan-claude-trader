@@ -60,7 +60,8 @@ class DhanClient:
     def get_positions(self) -> list[dict]:
         try:
             resp = self.sdk.get_positions()
-            return resp.get("data", []) if isinstance(resp, dict) else resp
+            data = resp.get("data", []) if isinstance(resp, dict) else resp
+            return [p for p in data if isinstance(p, dict)] if isinstance(data, list) else []
         except Exception as e:                       # noqa: BLE001 - surface, don't crash
             log.exception("get_positions failed")
             raise DhanError(f"Failed to fetch positions: {e}") from e
@@ -68,7 +69,8 @@ class DhanClient:
     def get_fund_limits(self) -> dict:
         try:
             resp = self.sdk.get_fund_limits()
-            return resp.get("data", {}) if isinstance(resp, dict) else resp
+            data = resp.get("data", {}) if isinstance(resp, dict) else resp
+            return data if isinstance(data, dict) else {}
         except Exception as e:                       # noqa: BLE001
             raise DhanError(f"Failed to fetch funds: {e}") from e
 
@@ -108,7 +110,8 @@ class DhanClient:
     def get_holdings(self) -> list:
         try:
             resp = self.sdk.get_holdings()
-            return resp.get("data", []) if isinstance(resp, dict) else resp
+            data = resp.get("data", []) if isinstance(resp, dict) else resp
+            return data if isinstance(data, list) else []
         except Exception as e:                       # noqa: BLE001
             raise DhanError(f"Failed to fetch holdings: {e}") from e
 

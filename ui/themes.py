@@ -45,9 +45,8 @@ THEME_NAMES = list(THEMES.keys())
 def css(name: str) -> str:
     t = THEMES.get(name, THEMES["aura"])
     return f"""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 :root {{
   --bg:{t['bg']}; --surface:{t['surface']}; --surface-hover:{t['surface_hover']};
   --border:{t['border']}; --ink:{t['ink']}; --muted:{t['muted']};
@@ -125,7 +124,11 @@ def apply(default: str = "aura") -> str:
     current = st.session_state.get("ui_theme") or config_store.get_setting("UI_THEME", default)
     if current not in THEMES:
         current = default
-    st.markdown(css(current), unsafe_allow_html=True)
+    # st.html injects raw CSS into the main DOM reliably (st.markdown can escape <style>)
+    try:
+        st.html(css(current))
+    except AttributeError:                     # older Streamlit without st.html
+        st.markdown(css(current), unsafe_allow_html=True)
     with st.sidebar:
         st.markdown("<div class='eyebrow'>APPEARANCE</div>", unsafe_allow_html=True)
         picked = st.selectbox("Theme", THEME_NAMES,
