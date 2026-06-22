@@ -53,10 +53,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+from core import config_store
+from services.providers import make_client as _make_client
+
 # ---------------------------------------------------------------- state
 ss = st.session_state
-ss.setdefault("mode", os.getenv("TRADE_MODE", "PAPER"))
-ss.setdefault("signal_source", os.getenv("SIGNAL_SOURCE", "mock"))
+ss.setdefault("mode", config_store.get_setting("TRADE_MODE", "PAPER"))
+ss.setdefault("signal_source", config_store.get_setting("SIGNAL_SOURCE", "mock"))
 ss.setdefault("pending", None)
 ss.setdefault("last_refresh", 0.0)
 ss.setdefault("signal_cache", {})
@@ -68,9 +71,23 @@ def get_journal():
 
 
 def get_client(mode: str) -> DhanClient:
-    return DhanClient(client_id=os.getenv("DHAN_CLIENT_ID"),
-                      access_token=os.getenv("DHAN_ACCESS_TOKEN"),
+    return DhanClient(client_id=config_store.get_setting("DHAN_CLIENT_ID"),
+                      access_token=config_store.get_setting("DHAN_ACCESS_TOKEN"),
                       mode=TradeMode(mode))
+
+
+def enabled_providers():
+    """Provider specs that are enabled AND have a key set (from settings or .env)."""
+    specs = json.loads(Path("providers.json").read_text())["providers"]
+    out = []
+    for s in specs:
+        if s.get("enabled", True) and config_store.get_setting(s.get("key_env", "")):
+            out.append(s)
+    return out
+
+
+def provider_client_factory(spec):
+    return _make_client(spec, config_store.get_setting(spec["key_env"]))
 
 
 @st.cache_resource
@@ -103,12 +120,16 @@ def get_equity(mode: str, dhan: DhanClient) -> float:
             return float(funds.get("availabelBalance", funds.get("availableBalance", 0)) or 0)
         except DhanError:
             return 0.0
-    return float(os.getenv("ACCOUNT_CAPITAL", "100000"))
+    return float(config_store.get_setting("ACCOUNT_CAPITAL", "100000"))
 
 
 # ---------------------------------------------------------------- header
 mode = ss["mode"]
-cfg = risk_manager.load_risk_config()
+cfg = risk_manager.load_risk_config({
+    "MAX_DAILY_LOSS": config_store.get_setting("MAX_DAILY_LOSS", "10000"),
+    "MAX_RISK_PER_TRADE_PCT": config_store.get_setting("MAX_RISK_PER_TRADE_PCT", "1.0"),
+    "MAX_OPEN_POSITIONS": config_store.get_setting("MAX_OPEN_POSITIONS", "2"),
+})
 journal = get_journal()
 dhan = get_client(mode)
 
@@ -213,8 +234,10 @@ with left:
                                         active_ids=list(range(1, 30)))
                 last = float(candles["close"].iloc[-1])
                 atr = float(ind.atr(candles).dropna().iloc[-1])
+                _provs = enabled_providers() if ss["signal_source"] == "api" else None
                 cs = signal_engine.generate(
                     instr, snap, last_price=last, atr=atr, mode=ss["signal_source"],
+                    providers=_provs, client_factory=provider_client_factory,
                     cache=ss["signal_cache"])
             except DhanError as e:
                 st.markdown(f"<div class='card'><b>{instr.symbol}</b> "
