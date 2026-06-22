@@ -125,8 +125,15 @@ with c1:
     st.markdown(f"### Dhan-Claude Trader &nbsp; {badge}")
     st.caption("AI recommends · you confirm every trade")
 with c2:
-    ss["mode"] = st.selectbox("Trade mode", ["PAPER", "LIVE"],
-                              index=0 if mode == "PAPER" else 1)
+    from core import readiness
+    _picked_mode = st.selectbox("Trade mode", ["PAPER", "LIVE"],
+                                index=0 if mode == "PAPER" else 1)
+    if _picked_mode == "LIVE" and not readiness.all_passed():
+        st.error(f"🔒 LIVE locked — {readiness.passed_count()}/{len(readiness.GATE_IDS)} "
+                 "readiness gates passed. Complete them on the Go-Live page.")
+        ss["mode"] = "PAPER"
+    else:
+        ss["mode"] = _picked_mode
 with c3:
     ss["signal_source"] = st.selectbox("Signal source", ["mock", "api"],
                                        index=0 if ss["signal_source"] == "mock" else 1)
