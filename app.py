@@ -37,24 +37,10 @@ load_dotenv()
 
 st.set_page_config(page_title="Dhan-Claude Trader", layout="wide")
 
-# ---------------------------------------------------------------- styling
-st.markdown("""
-<style>
-  .stApp { background: #0b0f18; }
-  section.main > div { padding-top: 0.5rem; }
-  .card { background:#161d2e; border:1px solid #26314a; border-radius:14px;
-          padding:14px 16px; margin-bottom:10px; }
-  .buy { color:#34d399; font-weight:700; } .sell { color:#f87171; font-weight:700; }
-  .hold { color:#fbbf24; font-weight:700; }
-  .muted { color:#7c8499; font-size:0.85rem; }
-  .chip { display:inline-block; background:#1e2740; border:1px solid #2d3a55;
-          border-radius:8px; padding:2px 8px; margin:2px; font-size:0.75rem; }
-  .pnl-pos { color:#34d399; font-weight:700; } .pnl-neg { color:#f87171; font-weight:700; }
-</style>
-""", unsafe_allow_html=True)
-
 from core import config_store
 from services.providers import make_client as _make_client
+from ui import themes
+themes.apply()    # inject active theme (AURA default) + sidebar theme picker
 
 # ---------------------------------------------------------------- state
 ss = st.session_state

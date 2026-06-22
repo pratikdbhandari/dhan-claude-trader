@@ -13,6 +13,8 @@ from services.dhan_client import DhanClient
 from services import instruments, selftest
 
 st.set_page_config(page_title="Settings — Dhan-Claude Trader", layout="wide")
+from ui import themes as _themes
+_themes.apply()
 st.markdown("### ⚙️ Settings — API Keys & Connection")
 st.caption("Keys are saved locally on this PC only (never uploaded / never in Git).")
 

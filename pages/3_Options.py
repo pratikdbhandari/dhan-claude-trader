@@ -18,6 +18,8 @@ from services.options_payoff import payoff_curve
 
 load_dotenv()
 st.set_page_config(page_title="Options — Dhan-Claude Trader", layout="wide")
+from ui import themes as _themes
+_themes.apply()
 st.markdown("### ⚙️ Options — Credit Spread Builder")
 st.caption("Defined-risk spreads. AI suggests direction; you confirm every order.")
 

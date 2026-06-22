@@ -11,6 +11,8 @@ from services.eod_report import build_report, write_report
 
 load_dotenv()
 st.set_page_config(page_title="Reports — Dhan-Claude Trader", layout="wide")
+from ui import themes as _themes
+_themes.apply()
 
 st.markdown("### 📊 Reports & Accounting")
 

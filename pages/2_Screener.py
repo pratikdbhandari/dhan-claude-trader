@@ -14,6 +14,8 @@ from services.screener import scan
 
 load_dotenv()
 st.set_page_config(page_title="Screener — Dhan-Claude Trader", layout="wide")
+from ui import themes as _themes
+_themes.apply()
 st.markdown("### 🔍 Strategy Screener")
 
 PRESETS = json.loads(Path("strategies.json").read_text())["presets"]
