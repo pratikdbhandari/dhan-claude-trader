@@ -14,7 +14,7 @@ def test_find_free_port_returns_bindable_port():
         s.bind(("127.0.0.1", port))
 
 
-def test_find_free_port_returns_different_ports_usually():
+def test_find_free_port_returns_ports_in_valid_range():
     ports = {find_free_port() for _ in range(5)}
     assert all(1024 < p < 65536 for p in ports)
 
@@ -115,3 +115,27 @@ def test_acquire_lock_recovers_from_stale_lockfile(tmp_path):
     lock.write_text("999999")                  # dead PID, no process holds it
     handle = acquire_lock(lock)
     assert handle is not None
+
+
+def test_release_lock_with_none_handle_does_not_delete_owners_lock(tmp_path):
+    lock = tmp_path / "app.lock"
+    owner = acquire_lock(lock)
+    assert owner is not None
+    denied = acquire_lock(lock)          # blocked -> None
+    release_lock(denied, lock)           # must NOT delete the owner's lock
+    assert lock.exists()
+    release_lock(owner, lock)
+    assert not lock.exists()
+
+
+def test_acquire_lock_blocks_when_live_foreign_pid_holds_lock(tmp_path):
+    import subprocess
+    import sys
+    lock = tmp_path / "app.lock"
+    proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+    try:
+        lock.write_text(str(proc.pid))
+        assert acquire_lock(lock) is None    # live foreign PID -> blocked
+    finally:
+        proc.kill()
+        proc.wait()

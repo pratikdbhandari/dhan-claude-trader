@@ -57,7 +57,9 @@ def resolve_user_dir(*, exe_dir: Path, bundle_dir: Path) -> Path:
 
 
 def _pid_alive(pid: int) -> bool:
-    """Windows: os.kill(pid, 0) raises OSError if the PID doesn't exist."""
+    """True if PID exists. os.kill(pid, 0) is a pure existence probe here —
+    verified on Python 3.13/Win11 (raises OSError for dead PIDs, does not
+    terminate live ones), despite older docs suggesting otherwise."""
     try:
         os.kill(pid, 0)
         return True
@@ -72,7 +74,7 @@ def acquire_lock(lock_path: Path):
     if lock_path.exists():
         try:
             other_pid = int(lock_path.read_text().strip())
-        except ValueError:
+        except (ValueError, OSError):
             other_pid = None
         if other_pid is not None:
             if other_pid == os.getpid():
@@ -84,6 +86,10 @@ def acquire_lock(lock_path: Path):
 
 
 def release_lock(handle, lock_path: Path) -> None:
+    """Delete the lockfile, but only if we actually hold it — an instance whose
+    acquire_lock returned None must never delete the live owner's lock."""
+    if handle is None:
+        return
     try:
         lock_path.unlink()
     except OSError:
