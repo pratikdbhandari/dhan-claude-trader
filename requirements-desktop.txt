@@ -1,0 +1,4 @@
+# Desktop packaging extras — install ON TOP of requirements.txt, only needed to
+# build or run the .exe. The main requirements.txt is unchanged.
+pywebview==5.3.2
+pyinstaller==6.11.1
