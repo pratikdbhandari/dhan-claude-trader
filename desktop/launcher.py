@@ -120,28 +120,25 @@ def _exe_dir() -> Path:
 def _start_streamlit(port: int, app_path: Path) -> None:
     """Run Streamlit's bootstrap in this process (daemon thread). Same server
     `streamlit run app.py` starts, minus the browser auto-open."""
-    # Env must be set BEFORE importing streamlit — config is read at import.
-    os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
-    os.environ["STREAMLIT_SERVER_PORT"] = str(port)
-    os.environ["STREAMLIT_SERVER_ADDRESS"] = "127.0.0.1"
-    os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+    try:
+        from streamlit.web import bootstrap
 
-    from streamlit.web import bootstrap
-
-    # bootstrap.run installs a SIGTERM handler, which raises ValueError outside
-    # the main thread. We run in a daemon thread and the process exit tears the
-    # server down anyway, so stub it out.
-    bootstrap._set_up_signal_handler = lambda *a, **k: None
-    # bootstrap.run does NOT load config itself (the streamlit CLI does that
-    # before calling it), so apply our options explicitly.
-    flag_options = {
-        "server.headless": True,
-        "server.port": port,
-        "server.address": "127.0.0.1",
-        "browser.gatherUsageStats": False,
-    }
-    bootstrap.load_config_options(flag_options=flag_options)
-    bootstrap.run(str(app_path), False, [], flag_options)
+        # bootstrap.run installs SIGTERM/SIGINT handlers, which raise ValueError
+        # outside the main thread; stub them out (verified present in 1.40.2).
+        assert hasattr(bootstrap, "_set_up_signal_handler")
+        bootstrap._set_up_signal_handler = lambda *a, **k: None
+        # The streamlit CLI normally calls load_config_options before run();
+        # bare bootstrap.run does not, so apply our options explicitly.
+        flag_options = {
+            "server.headless": True,
+            "server.port": port,
+            "server.address": "127.0.0.1",
+            "browser.gatherUsageStats": False,
+        }
+        bootstrap.load_config_options(flag_options=flag_options)
+        bootstrap.run(str(app_path), False, [], flag_options)
+    except Exception:                              # noqa: BLE001
+        log.exception("streamlit server thread crashed")
 
 
 def _fatal_dialog(message: str) -> None:
@@ -151,14 +148,20 @@ def _fatal_dialog(message: str) -> None:
 
 
 def main() -> int:
-    exe_dir = _exe_dir()
-    user_dir = resolve_user_dir(exe_dir=exe_dir, bundle_dir=_bundle_dir())
-    logging.basicConfig(filename=str(user_dir / "launcher.log"), level=logging.INFO,
-                        format="%(asctime)s %(levelname)s %(message)s")
+    try:
+        exe_dir = _exe_dir()
+        user_dir = resolve_user_dir(exe_dir=exe_dir, bundle_dir=_bundle_dir())
+        logging.basicConfig(filename=str(user_dir / "launcher.log"), level=logging.INFO,
+                            format="%(asctime)s %(levelname)s %(message)s")
+    except Exception as e:                         # noqa: BLE001 - no log yet
+        _fatal_dialog("Dhan-Claude Trader could not create its data folder.\n\n"
+                      f"{e}\n\nTry moving the app out of Program Files.")
+        return 1
 
     lock_path = user_dir / "app.lock"
     lock = acquire_lock(lock_path)
     if lock is None:
+        log.info("second instance blocked by %s", lock_path)
         _fatal_dialog("Dhan-Claude Trader is already running.")
         return 1
 
