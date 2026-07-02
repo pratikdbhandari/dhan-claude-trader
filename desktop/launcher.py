@@ -130,6 +130,10 @@ def _start_streamlit(port: int, app_path: Path) -> None:
         # The streamlit CLI normally calls load_config_options before run();
         # bare bootstrap.run does not, so apply our options explicitly.
         flag_options = {
+            # In a frozen build streamlit can misdetect developmentMode=True
+            # (no proper dist install layout), which forbids setting
+            # server.port. Force it off.
+            "global.developmentMode": False,
             "server.headless": True,
             "server.port": port,
             "server.address": "127.0.0.1",
