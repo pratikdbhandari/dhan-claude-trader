@@ -94,3 +94,107 @@ def release_lock(handle, lock_path: Path) -> None:
         lock_path.unlink()
     except OSError:
         pass
+
+
+# ---------------------------------------------------------------- runtime
+import logging
+import threading
+
+log = logging.getLogger("launcher")
+
+
+def _bundle_dir() -> Path:
+    """Where PyInstaller unpacked our read-only payload (sys._MEIPASS in a
+    frozen build; repo root when run from source for debugging)."""
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)              # type: ignore[attr-defined]
+    return Path(__file__).resolve().parent.parent
+
+
+def _exe_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent
+
+
+def _start_streamlit(port: int, app_path: Path) -> None:
+    """Run Streamlit's bootstrap in this process (daemon thread). Same server
+    `streamlit run app.py` starts, minus the browser auto-open."""
+    # Env must be set BEFORE importing streamlit — config is read at import.
+    os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
+    os.environ["STREAMLIT_SERVER_PORT"] = str(port)
+    os.environ["STREAMLIT_SERVER_ADDRESS"] = "127.0.0.1"
+    os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+
+    from streamlit.web import bootstrap
+
+    # bootstrap.run installs a SIGTERM handler, which raises ValueError outside
+    # the main thread. We run in a daemon thread and the process exit tears the
+    # server down anyway, so stub it out.
+    bootstrap._set_up_signal_handler = lambda *a, **k: None
+    # bootstrap.run does NOT load config itself (the streamlit CLI does that
+    # before calling it), so apply our options explicitly.
+    flag_options = {
+        "server.headless": True,
+        "server.port": port,
+        "server.address": "127.0.0.1",
+        "browser.gatherUsageStats": False,
+    }
+    bootstrap.load_config_options(flag_options=flag_options)
+    bootstrap.run(str(app_path), False, [], flag_options)
+
+
+def _fatal_dialog(message: str) -> None:
+    """Native error box — user must never get a silent exit."""
+    import ctypes
+    ctypes.windll.user32.MessageBoxW(None, message, "Dhan-Claude Trader", 0x10)
+
+
+def main() -> int:
+    exe_dir = _exe_dir()
+    user_dir = resolve_user_dir(exe_dir=exe_dir, bundle_dir=_bundle_dir())
+    logging.basicConfig(filename=str(user_dir / "launcher.log"), level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(message)s")
+
+    lock_path = user_dir / "app.lock"
+    lock = acquire_lock(lock_path)
+    if lock is None:
+        _fatal_dialog("Dhan-Claude Trader is already running.")
+        return 1
+
+    try:
+        # app.py opens trades.db / reports/ / watchlist.json by relative path —
+        # chdir makes all of them resolve inside the persistent user dir.
+        os.chdir(user_dir)
+        app_path = _bundle_dir() / "app.py"
+
+        port = find_free_port()
+        t = threading.Thread(target=_start_streamlit, args=(port, app_path),
+                             daemon=True, name="streamlit-server")
+        t.start()
+
+        base_url = f"http://127.0.0.1:{port}"
+        if not wait_for_health(base_url):
+            log.error("streamlit did not become healthy within %ss", HEALTH_TIMEOUT_S)
+            _fatal_dialog("Could not start the trading engine.\n\n"
+                          f"See log: {user_dir / 'launcher.log'}")
+            return 1
+
+        import webview
+        webview.create_window("Dhan-Claude Trader", base_url,
+                              width=1440, height=900, min_size=(1100, 700))
+        webview.start()                        # blocks until window closed
+        log.info("window closed; shutting down")
+        return 0
+    except Exception:                          # noqa: BLE001
+        log.exception("launcher crashed")
+        _fatal_dialog("Dhan-Claude Trader failed to start.\n\n"
+                      f"See log: {user_dir / 'launcher.log'}")
+        return 1
+    finally:
+        release_lock(lock, lock_path)
+        # streamlit thread is daemon=True; process exit kills the server.
+
+
+if __name__ == "__main__":
+    sys.exit(main())
