@@ -586,3 +586,24 @@ git commit -m "docs(desktop): record packaged-build verification results"
 - **Spec coverage:** §2 launcher flow → Tasks 2–3. §3 file list → Tasks 1–4 create each file (`tests/desktop/test_launcher.py` per §6). §4 user-data split → `resolve_user_dir` + `os.chdir` (Tasks 2–3) + spec datas for defaults (Task 4); secrets path untouched, verified by checklist step 8. §5 error handling → startup-failure dialog + `launcher.log` (Task 3), stale-lock recovery + already-running dialog (Tasks 2–3, checklist step 6), WebView2-missing surfaced by pywebview and noted in Task 3 step 3. §6 testing → Task 2 unit tests + Task 5 manual checklist; `build/`/`dist/` gitignored in Task 1. §7 risk → `collect_all` + documented hiddenimport iteration loop (Task 4 step 3).
 - **Port-race retry (spec §5):** dropped as YAGNI-adjacent simplification — the window between `find_free_port()` releasing and Streamlit binding is milliseconds on a single-user desktop; if it ever bites, health-check timeout catches it and the user relaunches. Deviation from spec noted deliberately.
 - **Type consistency:** `acquire_lock`/`release_lock` signatures match between tests and impl; `resolve_user_dir(exe_dir=, bundle_dir=)` keyword-only in both; `wait_for_health` injectables (`get_fn`, `sleep_fn`, `now_fn`) match.
+
+---
+
+## Verification Results (2026-07-02)
+
+Build produced `dist/DhanTrader/DhanTrader.exe` (65.7 MB exe, ~800 MB onedir folder). Two build iterations: (1) built clean on the specced spec — no spec changes needed; boot probe then surfaced `AssertionError: server.port does not work when global.developmentMode is true` (frozen Streamlit misdetects dev mode), fixed by adding `"global.developmentMode": False` to `flag_options` in `desktop/launcher.py`. (2) Rebuilt, booted.
+
+**A real bug was found and fixed during verification** (commit `3a38966`): every page that reads the trade journal crashed with `sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread`. Root cause: `data/journal.py:init_db` opened the connection with the default `check_same_thread=True`, but the connection is cached once via `@st.cache_resource` and reused across Streamlit's per-rerun worker threads. Fix: `check_same_thread=False`. This bug was latent in the browser app too — earlier "boots / HTTP 200" checks only hit `/_stcore/health` and never rendered a journal-reading page. After the fix: 200/200 unit tests pass; dev-mode render clean (0 ProgrammingError, 0 uncaught exceptions); rebuilt exe render clean and `trades.db` read/written successfully.
+
+| Step | Result | Evidence |
+|------|--------|----------|
+| 1. Launch (window, no console/browser) | PASS (automated: process + health) | listener on 127.0.0.1:57194, `/_stcore/health` 200, no python.exe subprocess (all in-process). Visual window appearance = eyeball-confirm. |
+| 2. First-run data dir | PASS | `dist/DhanTrader/data/` seeded with watchlist/strategies/providers/charges.json, reports/, launcher.log, trades.db |
+| 3. All pages render | PASS (proxy) / NEEDS-HUMAN (visual) | server render log shows 0 tracebacks after fix (was crashing every render before); full visual click-through of the 6 pages still needs a human. |
+| 4. PAPER order round-trip | NEEDS-HUMAN | requires UI clicks; partial: `trades.db` initialized on boot. |
+| 5. User edit survives | PASS (logic) | launcher `resolve_user_dir` only copies defaults when absent (unit-tested: `test_resolve_user_dir_does_not_overwrite_existing_user_edits`). |
+| 6. Single instance | PASS (logic) | `acquire_lock` blocks live-PID second instance + logs "second instance blocked" (unit-tested). Dialog blocks until dismissed. |
+| 7. Clean shutdown / stale-lock | PASS (logic) | daemon-thread server dies on process exit; stale-lock takeover unit-tested. Graceful window-close lock removal = NEEDS-HUMAN. |
+| 8. Settings persistence | NEEDS-HUMAN | secrets path `~/.dhan_claude_trader/settings.local.json` untouched by chdir (by construction); UI save/reload needs a human. |
+
+**Remaining for the user:** a visual click-through of all six pages and one PAPER-mode order placement — the automation confirmed the server-side render path is clean, but the on-screen UI interaction can't be driven headlessly this session.
