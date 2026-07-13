@@ -28,3 +28,8 @@ data/instrument_master.csv
 Thumbs.db
 .idea/
 .vscode/
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec.bak

@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS trades (
 
 
 def init_db(path: str = "trades.db") -> sqlite3.Connection:
-    conn = sqlite3.connect(path)
+    # check_same_thread=False: the connection is cached once (@st.cache_resource)
+    # and reused across Streamlit's per-rerun worker threads. Safe here — this is
+    # a single-user app and SQLite serialises its own access.
+    conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute(_SCHEMA)
     conn.commit()
