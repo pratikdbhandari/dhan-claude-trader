@@ -19,8 +19,9 @@ def create_web_app() -> FastAPI:
     def health():
         return {"status": "ok"}
 
-    from web.routes import dashboard
-    app.include_router(dashboard.router)
+    from web.routes import dashboard, reports
+    for mod in (dashboard, reports):
+        app.include_router(mod.router)
     return app
 
 
