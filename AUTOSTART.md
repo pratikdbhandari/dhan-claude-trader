@@ -49,3 +49,22 @@ To run it slightly before market open, use a **Daily** trigger at **09:00 IST** 
 6. Keep **Trade mode = PAPER** for your 15-day paper run.
 
 Stopping the app: close the terminal window (or `Ctrl+C` in it).
+
+---
+
+## Option 3 — The 24/7 API layer (run signals + push while your PC/app is closed)
+
+The desktop app only prepares signals while its window is open. To keep signals
+generating and get phone push notifications around the clock, run the **FastAPI
+layer** (`api/`) — locally alongside the app, or hosted on an always-on server.
+
+**Locally (alongside the desktop app):**
+1. Double-click **`run_api.bat`** — serves the API at `http://localhost:8000`.
+2. Expose it to your phone with a free **Cloudflare Tunnel**:
+   `cloudflared tunnel run <tunnel-name>` pointed at `localhost:8000`.
+3. Put **Cloudflare Access** (free, email-gated) in front — never expose the raw API.
+
+**Hosted 24/7 (laptop off):** see **`DEPLOY_24_7.md`** for the full always-on guide
+(Oracle free tier / cheap VPS / Raspberry Pi + systemd or Docker + Cloudflare Access).
+
+Requires the `SUPABASE_*` and `FCM_*` values in `.env` (see `.env.example`).
