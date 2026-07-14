@@ -1,0 +1,13 @@
+<div class="banner warn">⚠ Confirm order — step 2 of 2</div>
+<div class="card {{ req.side.value.lower() }}">
+  <b>{{ symbol }}</b> {{ req.side.value }} {{ req.qty }} @ ₹{{ req.price }}
+  <span class="muted">({{ req.product_type }})</span>
+  {% if rc.allowed %}<div class="banner ok">Risk check ✅ passed</div>
+  {% else %}<div class="banner err">Blocked: {{ rc.reasons|join('; ') }}</div>{% endif %}
+  {% if halted %}<div class="banner halt">🔴 Halted — resume to place.</div>{% endif %}
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="go" hx-post="/dashboard/place/{{ symbol }}" hx-target="#toast" hx-swap="innerHTML"
+            {% if not rc.allowed or halted %}disabled{% endif %}>✓ Place order</button>
+    <button onclick="document.getElementById('dialog').innerHTML=''">Cancel</button>
+  </div>
+</div>

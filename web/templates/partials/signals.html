@@ -1,0 +1,20 @@
+{% for c in cards %}
+  {% if c.insufficient %}
+    <div class="card"><b>{{ c.symbol }}</b> <span class="muted">insufficient candle data</span></div>
+  {% elif c.error %}
+    <div class="card"><b>{{ c.symbol }}</b> <span class="muted">data error: {{ c.error }}</span></div>
+  {% else %}
+    <div class="card {{ c.cls }}">
+      <b>{{ c.symbol }}</b> <span class="muted">{{ c.regime }}</span>
+      <span class="conf {{ c.cls }}">{{ c.signal }} {{ c.conf }}%</span>
+      <span class="muted">agree {{ c.agree }}%</span>
+      <span class="chip {{ 'q' if c.qpass else 'qlow' }}">Quality {{ c.quality }} {{ c.qlabel }}</span>
+      <div class="muted">entry {{ c.entry }} · SL {{ c.sl }} · tgt {{ c.tgt }}</div>
+      {% if c.selectable %}
+        <button class="go" hx-get="/dashboard/confirm/{{ c.symbol }}" hx-target="#dialog" hx-swap="innerHTML">Select {{ c.symbol }} →</button>
+      {% endif %}
+    </div>
+  {% endif %}
+{% else %}
+  <div class="muted">No instruments in watchlist.</div>
+{% endfor %}

@@ -19,7 +19,8 @@ def create_web_app() -> FastAPI:
     def health():
         return {"status": "ok"}
 
-    # Route modules are wired in as each page task lands (Tasks 3-9).
+    from web.routes import dashboard
+    app.include_router(dashboard.router)
     return app
 
 
