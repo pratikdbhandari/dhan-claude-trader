@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Backtest — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<h2>Backtest &amp; robustness</h2>
+<p class="muted">Validate an edge before trusting capital. Reduces curve-fit risk — never zero.</p>
+<form hx-post="/backtest/run" hx-target="#result" hx-swap="innerHTML" hx-indicator="#bi">
+  <select name="symbol">{% for s in syms %}<option>{{ s }}</option>{% endfor %}</select>
+  <select name="style"><option>positional</option><option>intraday</option></select>
+  <button type="submit">Run backtest</button>
+  <span id="bi" class="htmx-indicator muted"> running…</span>
+</form>
+<div id="result"></div>
+{% endblock %}
