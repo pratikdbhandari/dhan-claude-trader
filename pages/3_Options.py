@@ -45,8 +45,10 @@ sell_delta = st.slider("Sell-leg delta", 0.15, 0.45, 0.30, 0.05)
 lot_size = st.number_input("Lot size", min_value=1, value=50)
 
 if st.button("Build spread"):
-    dhan = DhanClient(client_id=os.getenv("DHAN_CLIENT_ID"),
-                      access_token=os.getenv("DHAN_ACCESS_TOKEN"), mode=TradeMode.PAPER)
+    from core import config_store
+    dhan = DhanClient(client_id=config_store.get_setting("DHAN_CLIENT_ID"),
+                      access_token=config_store.get_setting("DHAN_ACCESS_TOKEN"),
+                      mode=TradeMode.PAPER)
     instr = instruments.resolve(
         Instrument(symbol=symbol, exchange_segment="IDX_I", security_id=None,
                    kind="INDEX"), _index())

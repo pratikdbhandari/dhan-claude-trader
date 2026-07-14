@@ -8,6 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from core.models import Instrument, TradeMode
+from core import config_store
 from services.dhan_client import DhanClient
 from services import instruments
 from services.screener import scan
@@ -42,12 +43,15 @@ def _load_watchlist():
 
 
 if st.button("Run scan"):
-    dhan = DhanClient(client_id=os.getenv("DHAN_CLIENT_ID"),
-                      access_token=os.getenv("DHAN_ACCESS_TOKEN"), mode=TradeMode.PAPER)
+    dhan = DhanClient(client_id=config_store.get_setting("DHAN_CLIENT_ID"),
+                      access_token=config_store.get_setting("DHAN_ACCESS_TOKEN"),
+                      mode=TradeMode.PAPER)
 
     def candles_fn(instr):
-        interval = 15 if instr.kind in ("INDEX", "FUT", "OPT") else "day"
-        return dhan.get_candles(instr, interval=interval, lookback_days=40)
+        intraday = instr.kind in ("INDEX", "FUT", "OPT")
+        interval = 15 if intraday else "day"
+        return dhan.get_candles(instr, interval=interval,
+                                lookback_days=10 if intraday else 400)
 
     rows = scan(_load_watchlist(), candles_fn=candles_fn,
                 active_ids=PRESETS[preset])
