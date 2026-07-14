@@ -46,7 +46,8 @@ def run_tick(*, watchlist: list[Instrument], dhan_client, journal_conn,
         try:
             style = "intraday" if instr.kind in ("INDEX", "FUT", "OPT") else "positional"
             candles = dhan_client.get_candles(
-                instr, interval=15 if style == "intraday" else "day", lookback_days=10)
+                instr, interval=15 if style == "intraday" else "day",
+                lookback_days=10 if style == "intraday" else 400)
             if candles is None or len(candles) < 30:
                 continue
             snap = build_confluence(candles, regime=None, style=style,

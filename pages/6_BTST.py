@@ -91,7 +91,7 @@ if not run_scan:
     st.info("BTST scan runs 3:00–3:30 PM IST. You can dry-run a preview now.")
 if run_scan or st.button("Scan now (preview)"):
     def candles_fn(instr):
-        return dhan.get_candles(instr, interval="day", lookback_days=40)
+        return dhan.get_candles(instr, interval="day", lookback_days=400)
 
     def confluence_fn(df):
         return build_confluence(df, regime=None, style="positional",

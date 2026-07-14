@@ -16,6 +16,6 @@ def get_screener(user_id: str = Depends(require_user), dhan=Depends(get_dhan_cli
     def _candles_fn(instr):
         style = "intraday" if instr.kind in ("INDEX", "FUT", "OPT") else "positional"
         return dhan.get_candles(instr, interval=15 if style == "intraday" else "day",
-                                lookback_days=10)
+                                lookback_days=10 if style == "intraday" else 400)
 
     return scan(watchlist, candles_fn=_candles_fn, active_ids=list(range(1, 30)))

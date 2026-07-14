@@ -233,7 +233,7 @@ with left:
             try:
                 style = "intraday" if instr.kind in ("INDEX", "FUT", "OPT") else "positional"
                 candles = dhan.get_candles(instr, interval=15 if style == "intraday" else "day",
-                                           lookback_days=10)
+                                           lookback_days=10 if style == "intraday" else 400)
                 if len(candles) < 30:
                     st.markdown(f"<div class='card'><b>{instr.symbol}</b> "
                                 f"<span class='muted'>insufficient candle data</span></div>",
