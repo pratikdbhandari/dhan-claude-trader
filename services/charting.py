@@ -156,3 +156,32 @@ def payoff(xs: list, ys: list, breakevens: list | None = None,
         fig.add_vline(x=be, line=dict(color=c["gold"], dash="dot"))
     fig.update_layout(height=320, **_theme_layout(colors))
     return fig
+
+
+def fold_bars(folds: list, colors: dict | None = None) -> go.Figure:
+    """Walk-forward per-fold expectancy bars (green>=0 / signal<0)."""
+    c = colors or _DEFAULT_COLORS
+    fig = go.Figure()
+    if not folds:
+        fig.add_annotation(text="no folds", showarrow=False, font=dict(color=c["ink"]))
+        fig.update_layout(height=220, **_theme_layout(colors))
+        return fig
+    exps = [f["expectancy"] for f in folds]
+    labels = [f"fold {i+1}" for i in range(len(folds))]
+    bar_colors = [c["green"] if e >= 0 else c["signal"] for e in exps]
+    fig.add_trace(go.Bar(x=labels, y=exps, marker=dict(color=bar_colors)))
+    fig.update_layout(height=220, **_theme_layout(colors))
+    return fig
+
+
+def histogram(values: list, colors: dict | None = None, title: str = "") -> go.Figure:
+    """Generic themed histogram (e.g. Monte-Carlo drawdown distribution)."""
+    c = colors or _DEFAULT_COLORS
+    fig = go.Figure()
+    if not values:
+        fig.add_annotation(text="no data", showarrow=False, font=dict(color=c["ink"]))
+        fig.update_layout(height=220, **_theme_layout(colors))
+        return fig
+    fig.add_trace(go.Histogram(x=values, marker=dict(color=c["accent"]), name=title))
+    fig.update_layout(height=220, **_theme_layout(colors))
+    return fig
