@@ -15,6 +15,8 @@ from services import instruments
 from services.options_chain import get_expiries, get_chain
 from services.options_strategy import build_credit_spread
 from services.options_payoff import payoff_curve
+from services import charting
+from ui import themes
 
 load_dotenv()
 st.set_page_config(page_title="Options — Dhan-Claude Trader", layout="wide")
@@ -79,11 +81,9 @@ if st.button("Build spread"):
                              f"breakevens {plan.breakevens}")
                     st.dataframe(pd.DataFrame(plan.legs), use_container_width=True)
                     xs, ys = payoff_curve(plan.legs, spot * 0.95, spot * 1.05)
-                    fig = go.Figure(go.Scatter(x=xs, y=ys, mode="lines", name="payoff"))
-                    fig.add_hline(y=0, line=dict(color="#888", dash="dot"))
-                    fig.update_layout(template="plotly_dark", height=320,
-                                      title="Payoff at expiry",
-                                      margin=dict(l=10, r=10, t=30, b=10))
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(charting.payoff(xs, ys, breakevens=plan.breakevens,
+                                    colors=themes.chart_colors()),
+                                    use_container_width=True,
+                                    config={"displayModeBar": False})
                     st.info("Review legs + max loss before placing. Order placement "
                             "for multi-leg is manual in this build (leg-execution risk).")

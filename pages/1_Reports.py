@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 from data.journal import init_db, to_legs, stats
 from services.accounting import realized_trades, portfolio, pnl_statement
 from services.eod_report import build_report, write_report
-from services import behavior
+from services import behavior, charting
+from ui import themes
 
 load_dotenv()
 st.set_page_config(page_title="Reports — Dhan-Claude Trader", layout="wide")
@@ -42,6 +43,16 @@ st.table(pd.DataFrame([{
     "GST": -stmt.gst, "Net realized": stmt.net_realized,
     "Unrealized": stmt.unrealized, "Total": stmt.total_pnl,
 }]).T.rename(columns={0: "₹"}))
+
+# ---- Equity curve + provider accuracy
+_cc = themes.chart_colors()
+st.markdown("#### Equity curve")
+st.plotly_chart(charting.equity_curve(realized_trades(legs, mode=mode), colors=_cc),
+                use_container_width=True, config={"displayModeBar": False})
+st.markdown("#### Provider accuracy")
+_rep = build_report(journal, mode=mode)
+st.plotly_chart(charting.provider_accuracy(_rep.get("leaderboard", []), colors=_cc),
+                use_container_width=True, config={"displayModeBar": False})
 
 # ---- Behavior diagnostics
 with st.expander("🧠 Behavior — disposition effect", expanded=False):
