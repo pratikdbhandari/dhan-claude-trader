@@ -151,6 +151,43 @@ def _fatal_dialog(message: str) -> None:
     ctypes.windll.user32.MessageBoxW(None, message, "Dhan-Claude Trader", 0x10)
 
 
+def _ring(minutes: int) -> None:
+    """Audible chime + native popup. Sound failure must not suppress the popup."""
+    try:
+        import winsound
+        winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+    except Exception:                              # noqa: BLE001 - no audio device etc.
+        log.exception("bell sound failed")
+    import ctypes
+    ctypes.windll.user32.MessageBoxW(
+        None, f"Market opens in {minutes} minutes.", "Dhan-Claude Trader", 0x40)
+
+
+def _bell_loop(stop: "threading.Event") -> None:
+    """Poll every 30s; ring once per day inside the configured pre-open window.
+    Reads config each tick so Settings changes take effect without a restart."""
+    from datetime import datetime, timezone
+    from services import bell, market_clock
+    from core import config_store
+    last_rung = None
+    while not stop.is_set():
+        try:
+            enabled = str(config_store.get_setting("BELL_ENABLED", "true")).lower() == "true"
+            try:
+                lead = int(config_store.get_setting("BELL_LEAD_MINUTES", "10"))
+            except (TypeError, ValueError):
+                lead = 10
+            now = datetime.now(timezone.utc)
+            if bell.should_ring(now, enabled=enabled, lead_minutes=lead,
+                                last_rung_date=last_rung):
+                m = market_clock.minutes_to_open(now)
+                _ring(m if m is not None else lead)
+                last_rung = now.astimezone(market_clock.IST).date()
+        except Exception:                          # noqa: BLE001 - never kill the app
+            log.exception("bell loop tick failed")
+        stop.wait(30)
+
+
 def main() -> int:
     try:
         exe_dir = _exe_dir()
@@ -169,6 +206,7 @@ def main() -> int:
         _fatal_dialog("Dhan-Claude Trader is already running.")
         return 1
 
+    bell_stop = None
     try:
         # app.py opens trades.db / reports/ / watchlist.json by relative path —
         # chdir makes all of them resolve inside the persistent user dir.
@@ -179,6 +217,10 @@ def main() -> int:
         t = threading.Thread(target=_start_streamlit, args=(port, app_path),
                              daemon=True, name="streamlit-server")
         t.start()
+
+        bell_stop = threading.Event()
+        threading.Thread(target=_bell_loop, args=(bell_stop,),
+                         daemon=True, name="bell").start()
 
         base_url = f"http://127.0.0.1:{port}"
         if not wait_for_health(base_url):
@@ -199,8 +241,10 @@ def main() -> int:
                       f"See log: {user_dir / 'launcher.log'}")
         return 1
     finally:
+        if bell_stop is not None:
+            bell_stop.set()
         release_lock(lock, lock_path)
-        # streamlit thread is daemon=True; process exit kills the server.
+        # streamlit + bell threads are daemon=True; process exit kills them.
 
 
 if __name__ == "__main__":

@@ -69,6 +69,21 @@ if st.button("💾 Save settings", type="primary"):
     })
     st.success(f"Saved to {path}")
 
+# ---------------------------------------------------------------- Market-open bell
+st.divider()
+st.markdown("#### Market-open bell")
+st.caption("Rings a chime + popup before the 09:15 open. Fires only while the app is open.")
+_bell_on = st.checkbox(
+    "Enable pre-open bell",
+    value=str(val("BELL_ENABLED", "true")).lower() == "true")
+_bell_lead = st.number_input(
+    "Minutes before open", min_value=1, max_value=60,
+    value=int(val("BELL_LEAD_MINUTES", "10")))
+if st.button("Save bell settings"):
+    config_store.save({"BELL_ENABLED": "true" if _bell_on else "false",
+                       "BELL_LEAD_MINUTES": str(int(_bell_lead))})
+    st.success("Bell settings saved.")
+
 st.divider()
 
 # ---------------------------------------------------------------- Test All
