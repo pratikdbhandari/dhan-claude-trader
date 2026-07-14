@@ -47,6 +47,23 @@ SIGNAL, GOLD, GREEN = "#FF2A2A", "#FFD700", "#059669"
 THEME_NAMES = list(THEMES.keys())
 
 
+def chart_colors() -> dict:
+    """Active theme's chart palette. Never raises — falls back to aura outside a
+    Streamlit run (so pure chart builders can call it anywhere)."""
+    name = "aura"
+    try:
+        import streamlit as st
+        name = st.session_state.get("ui_theme") or name
+        if name == "aura":
+            from core import config_store
+            name = config_store.get_setting("UI_THEME", "aura")
+    except Exception:                              # noqa: BLE001
+        name = "aura"
+    t = THEMES.get(name, THEMES["aura"])
+    return {"bg": t["bg"], "ink": t["ink"], "grid": t["border"],
+            "green": GREEN, "signal": SIGNAL, "gold": GOLD, "accent": t["accent"]}
+
+
 def css(name: str) -> str:
     t = THEMES.get(name, THEMES["aura"])
     return f"""

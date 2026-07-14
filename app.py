@@ -208,6 +208,7 @@ st.divider()
 
 # ---------------------------------------------------------------- signals
 equity = get_equity(mode, dhan)
+_cc = themes.chart_colors()
 left, right = st.columns([2, 1])
 
 _today_events = ["EXPIRY"] if _date.today().weekday() == 3 else []
@@ -271,13 +272,15 @@ with left:
                            "stop_loss": snap_d.get("stop_loss"),
                            "target": snap_d.get("target")}
                 st.plotly_chart(charting.price_chart(candles, symbol=instr.symbol,
-                                markers=markers), use_container_width=True,
-                                key=f"px_{instr.symbol}")
+                                markers=markers, colors=_cc), use_container_width=True,
+                                key=f"px_{instr.symbol}", config={"displayModeBar": False})
                 cc1, cc2 = st.columns(2)
-                cc1.plotly_chart(charting.rsi_panel(candles), use_container_width=True,
-                                 key=f"rsi_{instr.symbol}")
-                cc2.plotly_chart(charting.macd_panel(candles), use_container_width=True,
-                                 key=f"macd_{instr.symbol}")
+                cc1.plotly_chart(charting.rsi_panel(candles, colors=_cc),
+                                 use_container_width=True, key=f"rsi_{instr.symbol}",
+                                 config={"displayModeBar": False})
+                cc2.plotly_chart(charting.macd_panel(candles, colors=_cc),
+                                 use_container_width=True, key=f"macd_{instr.symbol}",
+                                 config={"displayModeBar": False})
 
             if sig is not SignalType.HOLD and not globally_blocked:
                 disabled = not gate.passed
