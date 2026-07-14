@@ -1,0 +1,6 @@
+{
+  "_comment": "AI provider prices in INR per 1000 tokens. EDITABLE. Update when a provider changes rates. Models not listed use 'default'.",
+  "default": {"input_per_1k": 0.0, "output_per_1k": 0.0},
+  "claude-sonnet-5": {"input_per_1k": 0.25, "output_per_1k": 1.25},
+  "claude-haiku-4-5-20251001": {"input_per_1k": 0.07, "output_per_1k": 0.35}
+}
