@@ -129,7 +129,7 @@ class DhanClient:
                 quantity=req.qty,
                 order_type=req.order_type.value,
                 price=req.price or 0,
-                product_type="INTRADAY",
+                product_type=req.product_type,
             )
             oid = (resp.get("data") or {}).get("orderId") if isinstance(resp, dict) else None
             return OrderResult(ok=bool(oid), mode=TradeMode.LIVE, status="PLACED",
