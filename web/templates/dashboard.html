@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Dhan-Claude Trader{% endblock %}
+{% block halt_banner %}{% if halted %}<div class="banner halt">🔴 TRADING HALTED — no orders will be placed. <button class="go" hx-post="/dashboard/resume" hx-swap="none" hx-on::after-request="location.reload()">Resume</button></div>{% endif %}{% endblock %}
+{% block body %}
+<h2>Dashboard <span class="muted">{{ '🟡 PAPER' if mode=='PAPER' else '🔴 LIVE' }}</span></h2>
+<div style="display:flex;gap:8px;margin:8px 0">
+  {% if not halted %}<button class="halt" hx-post="/dashboard/halt" hx-swap="none" hx-on::after-request="location.reload()">🔴 HALT trading</button>{% endif %}
+</div>
+{% if panel.err %}<div class="banner err">Dhan read failed: {{ panel.err }}</div>{% endif %}
+<div class="tiles">
+  <div class="tile"><div class="label">Today P&L</div><div class="num {{ 'g' if panel.dpnl>=0 else 'r' }}">₹{{ '%.0f'|format(panel.dpnl) }}</div></div>
+  <div class="tile"><div class="label">Loss buffer</div><div class="num">₹{{ '%.0f'|format(panel.buffer) }}</div></div>
+  <div class="tile"><div class="label">Open positions</div><div class="num">{{ panel.open_count }}/{{ cfg.max_open_positions }}</div></div>
+  <div class="tile"><div class="label">Orders</div><div class="num {{ 'r' if panel.blocked else 'g' }}">{{ '🔴 blocked' if panel.blocked else '✓ allowed' }}</div></div>
+</div>
+{% if panel.blocked %}<div class="banner warn">New orders blocked: risk limit reached.</div>{% endif %}
+<h3>Live signals</h3>
+<div id="signals" hx-get="/partials/signals" hx-trigger="load, every 30s" hx-swap="innerHTML">
+  <div class="muted">Loading signals…</div>
+</div>
+<div id="dialog"></div>
+<div id="toast"></div>
+{% endblock %}

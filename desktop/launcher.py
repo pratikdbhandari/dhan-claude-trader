@@ -25,14 +25,15 @@ def find_free_port() -> int:
 
 
 def wait_for_health(base_url: str, *, timeout_s: int = HEALTH_TIMEOUT_S,
+                    health_path: str = "/health",
                     get_fn=requests.get, sleep_fn=time.sleep,
                     now_fn=time.monotonic) -> bool:
-    """Poll <base_url>/_stcore/health until it answers 200 'ok' or timeout."""
+    """Poll <base_url><health_path> until it answers 200 or timeout."""
     deadline = now_fn() + timeout_s
     while now_fn() < deadline:
         try:
-            r = get_fn(f"{base_url}/_stcore/health", timeout=2)
-            if r.status_code == 200 and "ok" in r.text:
+            r = get_fn(f"{base_url}{health_path}", timeout=2)
+            if r.status_code == 200:
                 return True
         except Exception:                              # noqa: BLE001 - server not up yet
             pass
@@ -145,6 +146,16 @@ def _start_streamlit(port: int, app_path: Path) -> None:
         log.exception("streamlit server thread crashed")
 
 
+def _start_web(port: int) -> None:
+    """Serve the HTML web app headless (replaces the Streamlit server)."""
+    try:
+        import uvicorn
+        from web.server import app
+        uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+    except Exception:                              # noqa: BLE001
+        log.exception("web server thread crashed")
+
+
 def _fatal_dialog(message: str) -> None:
     """Native error box — user must never get a silent exit."""
     import ctypes
@@ -214,9 +225,8 @@ def main() -> int:
         app_path = _bundle_dir() / "app.py"
 
         port = find_free_port()
-        t = threading.Thread(target=_start_streamlit, args=(port, app_path),
-                             daemon=True, name="streamlit-server")
-        t.start()
+        threading.Thread(target=_start_web, args=(port,), daemon=True,
+                         name="web-server").start()
 
         bell_stop = threading.Event()
         threading.Thread(target=_bell_loop, args=(bell_stop,),

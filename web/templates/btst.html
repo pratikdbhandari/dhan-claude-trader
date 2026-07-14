@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}BTST — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<h2>BTST — Buy Today, Sell Tomorrow</h2>
+{% if not near_close %}<div class="banner warn">BTST scan runs 3:00–3:30 PM IST. Preview below.</div>{% endif %}
+<h3>Candidates</h3>
+{% for c in candidates %}
+  <div class="card buy">
+    <b>{{ c.instrument.symbol }}</b> · entry ₹{{ c.entry }} · target ₹{{ c.target }} · stop ₹{{ c.stop }}
+    <div class="muted">{{ c.reasons|join(' · ') }}</div>
+    <div class="banner halt">⚠ {{ c.gap_risk }}</div>
+  </div>
+{% else %}<div class="muted">No BTST candidates right now.</div>{% endfor %}
+<h3>BTST book</h3>
+{% for b in book %}<div class="card"><b>{{ b.symbol }}</b> qty {{ b.qty }} · exit {{ b.planned_exit_date }} · tgt {{ b.plan_target }}</div>
+{% else %}<div class="muted">No open BTST positions.</div>{% endfor %}
+{% endblock %}

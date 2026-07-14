@@ -21,6 +21,10 @@ hiddenimports += [
     "services.strategies.trend", "services.strategies.mean_reversion",
     "services.strategies.breakout", "services.strategies.volume",
     "services.strategies.structure",
+    "uvicorn", "web.server", "web.deps", "web.charts",
+    "web.routes.dashboard", "web.routes.reports", "web.routes.screener",
+    "web.routes.backtest", "web.routes.options", "web.routes.settings",
+    "web.routes.golive", "web.routes.btst",
 ]
 for pkg in ("plotly", "ta", "yfinance", "dhanhq"):
     try:
@@ -42,6 +46,14 @@ datas += [
     ("../strategies.json", "."),
     ("../providers.json", "."),
     ("../charges.json", "."),
+    ("../costs.json", "."),
+    ("../web/__init__.py", "web"),
+    ("../web/server.py", "web"),
+    ("../web/deps.py", "web"),
+    ("../web/charts.py", "web"),
+    ("../web/routes", "web/routes"),
+    ("../web/templates", "web/templates"),
+    ("../web/static", "web/static"),
 ]
 
 a = Analysis(

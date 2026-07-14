@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" data-theme="terminal">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dhan-Claude Trader{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/plotly.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="brand">Dhan-Claude</div>
+    <a href="/">Dashboard</a><a href="/reports">Reports</a><a href="/screener">Screener</a>
+    <a href="/backtest">Backtest</a><a href="/options">Options</a><a href="/btst">BTST</a>
+    <a href="/settings">Settings</a><a href="/golive">Go-Live</a>
+  </nav>
+  <main class="content">
+    {% block halt_banner %}{% endblock %}
+    {% block body %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Go-Live — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<h2>Go-Live readiness</h2>
+<div class="banner {{ 'ok' if all else 'warn' }}">{{ passed }}/{{ total }} gates passed — LIVE {{ 'unlocked' if all else 'locked' }}</div>
+{% for g in gates %}
+  <div class="card">
+    <b>{{ g.label }}</b> <span class="muted">({{ g.kind }})</span>
+    <span class="{{ 'chip q' if g.passed else 'chip qlow' }}">{{ 'PASS' if g.passed else 'not yet' }}</span>
+    <form hx-post="/golive/gate" hx-target="body" hx-swap="none" hx-on::after-request="location.reload()" style="display:inline">
+      <input type="hidden" name="gate_id" value="{{ g.id }}">
+      <input type="hidden" name="value" value="{{ 'false' if g.passed else 'true' }}">
+      <button>{{ 'Uncheck' if g.passed else 'Mark done' }}</button>
+    </form>
+  </div>
+{% endfor %}
+{% endblock %}

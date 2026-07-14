@@ -1,0 +1,16 @@
+{% if insufficient is defined %}
+  <div class="banner warn">Only {{ insufficient }} trades — insufficient to validate. Widen lookback or loosen preset.</div>
+{% elif result %}
+  <div class="banner {{ 'ok' if verdict.robust else 'warn' }}">{{ '✓ Edge looks robust' if verdict.robust else '⚠ Edge not confirmed robust' }}</div>
+  {% for r in verdict.reasons %}<div class="muted">· {{ r }}</div>{% endfor %}
+  <div class="tiles">
+    <div class="tile"><div class="label">Trades</div><div class="num">{{ result.n_trades }}</div></div>
+    <div class="tile"><div class="label">Net P&L</div><div class="num g">₹{{ '%.0f'|format(result.net_pnl) }}</div></div>
+    <div class="tile"><div class="label">Win rate</div><div class="num">{{ result.win_rate }}%</div></div>
+    <div class="tile"><div class="label">Expectancy</div><div class="num">₹{{ result.expectancy }}</div></div>
+  </div>
+  <p class="muted">Walk-forward: {{ wf.pct_folds_profitable }}% of {{ wf.n_folds }} windows profitable ·
+     MC drawdown p95 ₹{{ mc.p95 }} · bootstrap CI ₹{{ ci.lo }}…₹{{ ci.hi }}</p>
+{% else %}
+  <div class="muted">No result.</div>
+{% endif %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Settings — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<h2>Settings</h2>
+<form hx-post="/settings/save" hx-target="#saved" hx-swap="innerHTML">
+  <p>Dhan client id <input name="dhan_id" value="{{ k.DHAN_CLIENT_ID }}"></p>
+  <p>Dhan access token <input name="dhan_token" type="password" placeholder="(unchanged if blank)"></p>
+  <p>Signal source <select name="signal_source"><option {{ 'selected' if k.SIGNAL_SOURCE=='mock' else '' }}>mock</option><option {{ 'selected' if k.SIGNAL_SOURCE=='api' else '' }}>api</option></select></p>
+  <p>Trade mode <select name="trade_mode"><option {{ 'selected' if k.TRADE_MODE=='PAPER' else '' }}>PAPER</option><option {{ 'selected' if k.TRADE_MODE=='LIVE' else '' }}>LIVE</option></select></p>
+  <p>Max daily loss ₹ <input name="max_daily_loss" value="{{ k.MAX_DAILY_LOSS or '10000' }}"></p>
+  <p>Risk %/trade <input name="max_risk" value="{{ k.MAX_RISK_PER_TRADE_PCT or '1.0' }}"></p>
+  <p>Max open positions <input name="max_pos" value="{{ k.MAX_OPEN_POSITIONS or '2' }}"></p>
+  <p>Account capital (paper) <input name="capital" value="{{ k.ACCOUNT_CAPITAL or '100000' }}"></p>
+  <p>Bell enabled <select name="bell_enabled"><option>true</option><option>false</option></select>
+     lead min <input name="bell_lead" value="{{ k.BELL_LEAD_MINUTES or '10' }}" style="width:60px"></p>
+  <button type="submit">💾 Save settings</button>
+</form>
+<div id="saved"></div>
+{% endblock %}
