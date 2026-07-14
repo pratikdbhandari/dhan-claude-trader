@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Options — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<h2>Options</h2>
+{% if not syms %}<div class="banner warn">No resolved INDEX instrument in the watchlist.</div>{% endif %}
+<form hx-post="/options/chain" hx-target="#chain" hx-swap="innerHTML">
+  <select name="symbol" onchange="this.form.security_id.value=this.selectedOptions[0].dataset.sid">
+    {% for s in syms %}<option data-sid="{{ s.security_id }}">{{ s.symbol }}</option>{% endfor %}
+  </select>
+  <input type="hidden" name="security_id" value="{{ syms[0].security_id if syms else '' }}">
+  <button type="submit">Load chain</button>
+</form>
+<div id="chain"></div>
+{% endblock %}
