@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from core.models import (ConsensusSignal, Instrument, OrderRequest, OrderResult,
                          OrderType, RiskCheck, Side, SignalType, TradeMode)
-from services import risk_manager
+from services import risk_manager, kill_switch, audit
 from services.risk_manager import RiskConfig
 
 
@@ -37,20 +37,32 @@ def prepare_order(consensus: ConsensusSignal, instrument: Instrument, *,
     check = risk_manager.pre_trade_check(req, cfg, equity=equity,
                                          day_pnl_value=day_pnl_value,
                                          open_count=open_count)
+    audit.log_event("PREPARE", {"symbol": instrument.symbol, "allowed": check.allowed})
     return PendingOrder(order_request=req, risk_check=check)
 
 
 def confirm_and_place(pending: PendingOrder, *, dhan_client, journal_conn,
                       consensus: ConsensusSignal | None = None) -> OrderResult:
-    """The ONLY path that places an order. Blocked orders never reach the broker."""
+    """The ONLY path that places an order. Halted or risk-blocked orders never reach
+    the broker. The kill-switch check is the first statement — structurally
+    unbypassable, like the no-auto-fire guarantee."""
+    req = pending.order_request
+    if kill_switch.is_halted():
+        audit.log_event("HALTED", {"symbol": req.instrument.symbol})
+        return OrderResult(ok=False, mode=dhan_client.mode, status="HALTED",
+                           error_message="Trading halted by kill-switch.")
     if not pending.risk_check.allowed:
+        audit.log_event("BLOCKED", {"symbol": req.instrument.symbol,
+                                    "reasons": pending.risk_check.reasons})
         return OrderResult(ok=False, mode=dhan_client.mode, status="BLOCKED",
                            error_message="; ".join(pending.risk_check.reasons))
-    req = pending.order_request
     if req.stop_loss is not None and req.target is not None:
         result = dhan_client.place_bracket_order(req)
     else:
         result = dhan_client.place_order(req)
+    audit.log_event("PLACED", {"symbol": req.instrument.symbol, "side": req.side.value,
+                               "qty": req.qty, "order_id": result.dhan_order_id,
+                               "status": result.status})
     if journal_conn is not None:
         from data.journal import log_order
         log_order(journal_conn, req, result, consensus=consensus)
@@ -72,4 +84,6 @@ def prepare_btst_order(candidate, *, equity: float, cfg: RiskConfig,
     check = risk_manager.pre_trade_check(req, cfg, equity=equity,
                                          day_pnl_value=day_pnl_value,
                                          open_count=open_count)
+    audit.log_event("PREPARE", {"symbol": candidate.instrument.symbol,
+                                "allowed": check.allowed})
     return PendingOrder(order_request=req, risk_check=check)

@@ -5,6 +5,15 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def _isolate_audit_ledger(tmp_path, monkeypatch):
+    """confirm_and_place/prepare now write audit events; point the ledger at a temp
+    file for every test so runs never create a stray audit.jsonl in the repo."""
+    from services import audit
+    monkeypatch.setattr(audit, "AUDIT_PATH", str(tmp_path / "audit.jsonl"))
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _ensure_strategies_registered():
     """Repopulate the strategy REGISTRY before every test.
 
