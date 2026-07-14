@@ -55,3 +55,21 @@ def confirm_and_place(pending: PendingOrder, *, dhan_client, journal_conn,
         from data.journal import log_order
         log_order(journal_conn, req, result, consensus=consensus)
     return result
+
+
+def prepare_btst_order(candidate, *, equity: float, cfg: RiskConfig,
+                       day_pnl_value: float, open_count: int) -> PendingOrder:
+    """Build a CNC (delivery) MARKET buy for a BTST candidate and run the same
+    pre-trade risk gate. Target/stop live in the plan (journal + BTST book), not a
+    broker bracket, so the OrderRequest carries no stop_loss/target — confirm_and_place
+    therefore routes to plain place_order (CNC), never place_bracket_order."""
+    qty = risk_manager.position_size(equity, candidate.entry, candidate.stop,
+                                     cfg.max_risk_per_trade_pct)
+    req = OrderRequest(
+        instrument=candidate.instrument, side=Side.BUY, order_type=OrderType.MARKET,
+        qty=qty, price=candidate.entry, stop_loss=None, target=None,
+        product_type="CNC")
+    check = risk_manager.pre_trade_check(req, cfg, equity=equity,
+                                         day_pnl_value=day_pnl_value,
+                                         open_count=open_count)
+    return PendingOrder(order_request=req, risk_check=check)
