@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from data.journal import init_db, to_legs, stats
 from services.accounting import realized_trades, portfolio, pnl_statement
 from services.eod_report import build_report, write_report
-from services import behavior, charting
+from services import behavior, charting, audit
 from ui import themes
 
 load_dotenv()
@@ -53,6 +53,14 @@ st.markdown("#### Provider accuracy")
 _rep = build_report(journal, mode=mode)
 st.plotly_chart(charting.provider_accuracy(_rep.get("leaderboard", []), colors=_cc),
                 use_container_width=True, config={"displayModeBar": False})
+
+# ---- Audit ledger
+with st.expander("🧾 Audit ledger (recent)", expanded=False):
+    _events = audit.read_events(limit=100)
+    if _events:
+        st.dataframe(pd.DataFrame(_events), use_container_width=True)
+    else:
+        st.caption("No audit events yet.")
 
 # ---- Behavior diagnostics
 with st.expander("🧠 Behavior — disposition effect", expanded=False):
