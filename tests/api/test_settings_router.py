@@ -24,7 +24,9 @@ def _redirect_settings_path(monkeypatch, path):
     monkeypatch.setattr(readiness.all_passed, "__defaults__", (path,))
 
 
-def test_get_risk_reads_current_settings(monkeypatch):
+def test_get_risk_reads_current_settings(monkeypatch, tmp_path):
+    # isolate from the real settings.local.json (file wins over env in get_setting)
+    _redirect_settings_path(monkeypatch, tmp_path / "empty.json")
     monkeypatch.setenv("MAX_DAILY_LOSS", "8000")
     monkeypatch.setenv("MAX_RISK_PER_TRADE_PCT", "1.5")
     monkeypatch.setenv("MAX_OPEN_POSITIONS", "4")
