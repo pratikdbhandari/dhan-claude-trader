@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from data.journal import init_db, to_legs, stats
 from services.accounting import realized_trades, portfolio, pnl_statement
 from services.eod_report import build_report, write_report
+from services import behavior
 
 load_dotenv()
 st.set_page_config(page_title="Reports — Dhan-Claude Trader", layout="wide")
@@ -41,6 +42,23 @@ st.table(pd.DataFrame([{
     "GST": -stmt.gst, "Net realized": stmt.net_realized,
     "Unrealized": stmt.unrealized, "Total": stmt.total_pnl,
 }]).T.rename(columns={0: "₹"}))
+
+# ---- Behavior diagnostics
+with st.expander("🧠 Behavior — disposition effect", expanded=False):
+    _disp = behavior.disposition_effect(realized_trades(legs, mode=mode))
+    if _disp.insufficient:
+        st.caption(_disp.verdict)
+    else:
+        if _disp.present:
+            st.warning(_disp.verdict)
+        else:
+            st.success(_disp.verdict)
+        b1, b2, b3 = st.columns(3)
+        b1.metric("Winners", f"{_disp.n_wins}",
+                  help=f"avg hold {_disp.avg_hold_win_hours:.1f}h · avg ₹{_disp.avg_win:,.0f}")
+        b2.metric("Losers", f"{_disp.n_losses}",
+                  help=f"avg hold {_disp.avg_hold_loss_hours:.1f}h · avg ₹{_disp.avg_loss:,.0f}")
+        b3.metric("Loss/Win hold ratio", f"{_disp.hold_ratio:.1f}×")
 
 # ---- Portfolio holdings
 st.markdown("#### Portfolio holdings")
