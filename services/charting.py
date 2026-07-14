@@ -90,3 +90,69 @@ def macd_panel(df: pd.DataFrame, colors: dict | None = None) -> go.Figure:
                              line=dict(color=c["gold"])))
     fig.update_layout(height=180, **_theme_layout(colors))
     return fig
+
+
+def equity_curve(trades: list, colors: dict | None = None) -> go.Figure:
+    """Cumulative net-P&L line + drawdown fill from closed RealizedTrades
+    (sorted by closed_at). Empty -> annotated empty figure."""
+    c = colors or _DEFAULT_COLORS
+    fig = go.Figure()
+    rows = sorted([t for t in trades], key=lambda t: t.closed_at)
+    if not rows:
+        fig.add_annotation(text="no closed trades", showarrow=False,
+                           font=dict(color=c["ink"]))
+        fig.update_layout(height=300, **_theme_layout(colors))
+        return fig
+    equity, run, peak, dd = [], 0.0, float("-inf"), []
+    for t in rows:
+        run = round(run + t.net_pnl, 2)
+        equity.append(run)
+        peak = max(peak, run)
+        dd.append(round(run - peak, 2))
+    x = list(range(len(equity)))
+    fig.add_trace(go.Scatter(x=x, y=equity, mode="lines", name="equity",
+                             line=dict(color=c["accent"], width=2)))
+    fig.add_trace(go.Scatter(x=x, y=dd, mode="lines", name="drawdown",
+                             fill="tozeroy", line=dict(color=c["signal"], width=1)))
+    fig.update_layout(height=300, **_theme_layout(colors))
+    return fig
+
+
+def provider_accuracy(rows: list, colors: dict | None = None) -> go.Figure:
+    """Horizontal accuracy bars per provider from the EOD leaderboard.
+    Empty -> annotated empty figure."""
+    c = colors or _DEFAULT_COLORS
+    fig = go.Figure()
+    if not rows:
+        fig.add_annotation(text="no scored calls yet", showarrow=False,
+                           font=dict(color=c["ink"]))
+        fig.update_layout(height=220, **_theme_layout(colors))
+        return fig
+    names = [r["provider"] for r in rows]
+    acc = [r["accuracy"] for r in rows]
+    bar_colors = [c["green"] if a >= 50 else c["signal"] for a in acc]
+    fig.add_trace(go.Bar(x=acc, y=names, orientation="h",
+                         marker=dict(color=bar_colors)))
+    lay = _theme_layout(colors)
+    lay["xaxis"] = dict(range=[0, 100], gridcolor=c["grid"], title="accuracy %")
+    fig.update_layout(height=220, **lay)
+    return fig
+
+
+def payoff(xs: list, ys: list, breakevens: list | None = None,
+           colors: dict | None = None) -> go.Figure:
+    """Options payoff area: green where profit, signal where loss, zero line +
+    optional vertical breakeven markers."""
+    c = colors or _DEFAULT_COLORS
+    fig = go.Figure()
+    pos = [y if y >= 0 else None for y in ys]
+    neg = [y if y < 0 else None for y in ys]
+    fig.add_trace(go.Scatter(x=xs, y=pos, mode="lines", name="profit",
+                             fill="tozeroy", line=dict(color=c["green"])))
+    fig.add_trace(go.Scatter(x=xs, y=neg, mode="lines", name="loss",
+                             fill="tozeroy", line=dict(color=c["signal"])))
+    fig.add_hline(y=0, line=dict(color=c["ink"], dash="dot"))
+    for be in (breakevens or []):
+        fig.add_vline(x=be, line=dict(color=c["gold"], dash="dot"))
+    fig.update_layout(height=320, **_theme_layout(colors))
+    return fig
