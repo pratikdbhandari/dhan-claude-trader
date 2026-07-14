@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from data.journal import init_db, to_legs, stats
 from services.accounting import realized_trades, portfolio, pnl_statement
 from services.eod_report import build_report, write_report
-from services import behavior, charting, audit
+from services import behavior, charting, audit, cost
 from ui import themes
 
 load_dotenv()
@@ -53,6 +53,22 @@ st.markdown("#### Provider accuracy")
 _rep = build_report(journal, mode=mode)
 st.plotly_chart(charting.provider_accuracy(_rep.get("leaderboard", []), colors=_cc),
                 use_container_width=True, config={"displayModeBar": False})
+
+# ---- AI cost
+st.markdown("#### 💸 AI cost")
+_runs = cost.read_runs()
+_today = cost.summary(_runs, "day")
+_month = cost.summary(_runs, "month")
+if _runs:
+    ac1, ac2 = st.columns(2)
+    ac1.metric("Today", f"₹{_today['total_cost']:.2f}")
+    ac2.metric("This month", f"₹{_month['total_cost']:.2f}")
+    _crows = [{"model": m, "runs": b["n"], "in_tok": b["in"], "out_tok": b["out"],
+               "₹": round(b["cost"], 2)} for m, b in _month["by_model"].items()]
+    if _crows:
+        st.dataframe(pd.DataFrame(_crows), use_container_width=True)
+else:
+    st.caption("No AI runs yet (mock mode is free).")
 
 # ---- Audit ledger
 with st.expander("🧾 Audit ledger (recent)", expanded=False):

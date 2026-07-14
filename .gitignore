@@ -36,3 +36,4 @@ dist/
 
 # runtime audit ledger
 audit.jsonl
+cost.jsonl

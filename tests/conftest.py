@@ -6,10 +6,11 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_audit_ledger(tmp_path, monkeypatch):
-    """confirm_and_place/prepare now write audit events; point the ledger at a temp
-    file for every test so runs never create a stray audit.jsonl in the repo."""
-    from services import audit
+    """confirm_and_place/prepare write audit events and make_client writes cost runs;
+    point both ledgers at temp files so tests never create stray jsonl in the repo."""
+    from services import audit, cost
     monkeypatch.setattr(audit, "AUDIT_PATH", str(tmp_path / "audit.jsonl"))
+    monkeypatch.setattr(cost, "COST_PATH", str(tmp_path / "cost.jsonl"))
     yield
 
 
