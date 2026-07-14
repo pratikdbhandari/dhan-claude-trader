@@ -88,6 +88,21 @@ class ConsensusSignal:
         return [p for p in self.providers if not p.error]
 
 
+@dataclass
+class BtstCandidate:
+    """One Buy-Today-Sell-Tomorrow candidate with its next-day plan."""
+    instrument: Instrument
+    entry: float
+    target: float
+    stop: float
+    net_score: float
+    close_strength: float      # (close - low) / (high - low), 0..1
+    volume_ratio: float        # today volume / average volume
+    reasons: list[str]
+    gap_risk: str
+    ai_reasoning: str = ""
+
+
 # --------------------------------------------------------------------------- #
 # Orders & risk
 # --------------------------------------------------------------------------- #
@@ -100,6 +115,7 @@ class OrderRequest:
     price: Optional[float] = None        # limit price
     stop_loss: Optional[float] = None
     target: Optional[float] = None
+    product_type: str = "INTRADAY"       # "INTRADAY" (MIS) | "CNC" (delivery, BTST)
     # provenance — what signal produced this (for the journal)
     source_signal: Optional[ConsensusSignal] = None
 

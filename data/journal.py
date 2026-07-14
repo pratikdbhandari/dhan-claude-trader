@@ -16,9 +16,19 @@ CREATE TABLE IF NOT EXISTS trades (
   signal TEXT, confidence INTEGER, entry REAL, stop_loss REAL, target REAL,
   rr_predicted REAL, reasoning TEXT, consensus_json TEXT,
   dhan_order_id TEXT, exec_status TEXT, exec_price REAL, error_message TEXT,
-  exit_price REAL, pnl REAL, rr_achieved REAL, closed_at TEXT
+  exit_price REAL, pnl REAL, rr_achieved REAL, closed_at TEXT,
+  strategy_tag TEXT, planned_exit_date TEXT, plan_target REAL, plan_stop REAL
 );
 """
+
+
+def _ensure_columns(conn: sqlite3.Connection) -> None:
+    """Additive migration for existing DBs — add BTST columns if missing."""
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(trades)")}
+    for col, decl in (("strategy_tag", "TEXT"), ("planned_exit_date", "TEXT"),
+                      ("plan_target", "REAL"), ("plan_stop", "REAL")):
+        if col not in have:
+            conn.execute(f"ALTER TABLE trades ADD COLUMN {col} {decl}")
 
 
 def init_db(path: str = "trades.db") -> sqlite3.Connection:
@@ -28,6 +38,7 @@ def init_db(path: str = "trades.db") -> sqlite3.Connection:
     conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute(_SCHEMA)
+    _ensure_columns(conn)
     conn.commit()
     return conn
 
@@ -49,9 +60,12 @@ def _consensus_to_json(consensus) -> str | None:
 
 
 def log_order(conn: sqlite3.Connection, req: OrderRequest, result: OrderResult,
-              consensus=None) -> int:
+              consensus=None, *, strategy_tag=None, planned_exit_date=None,
+              plan_target=None, plan_stop=None) -> int:
     instr = req.instrument
-    product_type = "INTRADAY"
+    # Reflect the real product so accounting/charges segment correctly
+    # (to_segment maps non-INTRADAY -> equity_delivery, e.g. BTST CNC).
+    product_type = getattr(req, "product_type", "INTRADAY") or "INTRADAY"
     row = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "mode": result.mode.value, "symbol": instr.symbol,
@@ -66,6 +80,8 @@ def log_order(conn: sqlite3.Connection, req: OrderRequest, result: OrderResult,
         "dhan_order_id": result.dhan_order_id, "exec_status": result.status,
         "exec_price": result.exec_price, "error_message": result.error_message,
         "exit_price": None, "pnl": None, "rr_achieved": None, "closed_at": None,
+        "strategy_tag": strategy_tag, "planned_exit_date": planned_exit_date,
+        "plan_target": plan_target, "plan_stop": plan_stop,
     }
     cols = ", ".join(row.keys())
     qs = ", ".join("?" for _ in row)
@@ -118,3 +134,31 @@ def to_legs(conn: sqlite3.Connection, mode: str) -> list[dict]:
             "rr_predicted": r["rr_predicted"],
         })
     return legs
+
+
+def open_btst_book(conn: sqlite3.Connection, mode: str) -> list[dict]:
+    """Open overnight BTST positions: BTST buys with no matching BTST sell of the
+    same symbol. Net qty per symbol = buys - sells; a symbol is open if net > 0."""
+    rows = conn.execute(
+        "SELECT * FROM trades WHERE mode=? AND strategy_tag='BTST' "
+        "AND exec_status IN ('FILLED','PLACED') ORDER BY id ASC", (mode,)).fetchall()
+    net: dict[str, int] = {}
+    latest_buy: dict[str, dict] = {}
+    for r in rows:
+        sym = r["symbol"]
+        signed = r["qty"] if r["side"] == "BUY" else -r["qty"]
+        net[sym] = net.get(sym, 0) + signed
+        if r["side"] == "BUY":
+            latest_buy[sym] = dict(r)
+    book = []
+    for sym, qty in net.items():
+        if qty > 0 and sym in latest_buy:
+            b = latest_buy[sym]
+            book.append({
+                "symbol": sym, "qty": qty, "entry": b["exec_price"] or b["entry"],
+                "plan_target": b["plan_target"], "plan_stop": b["plan_stop"],
+                "planned_exit_date": b["planned_exit_date"],
+                "security_id": b["security_id"],
+                "exchange_segment": b["exchange_segment"],
+            })
+    return book
