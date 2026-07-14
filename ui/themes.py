@@ -34,6 +34,11 @@ THEMES: dict[str, dict] = {
         "border": "#93A1A1", "ink": "#073642", "muted": "#586E75",
         "accent": "#268BD2", "sidebar_bg": "#002B36", "sidebar_ink": "#EEE8D5",
     },
+    "terminal": {
+        "bg": "#0e1117", "surface": "#141a24", "surface_hover": "#1c2436",
+        "border": "#232936", "ink": "#e6e9ef", "muted": "#6b7280",
+        "accent": "#1D9E75", "sidebar_bg": "#0b0f18", "sidebar_ink": "#e6e9ef",
+    },
 }
 
 # semantic colors — constant across themes (color only conveys meaning)
@@ -107,6 +112,24 @@ section[data-testid="stSidebar"] [aria-current="page"] {{
 .sell, .pnl-neg {{ color:var(--signal); font-weight:700; }}
 .hold {{ color:var(--gold); font-weight:700; }}
 .muted {{ color:var(--muted); font-size:0.85rem; }}
+
+/* reface components: metric tiles, accent signal cards, big confidence */
+.metric-tile {{ background:var(--surface); border:1px solid var(--border);
+  border-radius:0; padding:10px 12px; }}
+.metric-label {{ font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase;
+  color:var(--muted); }}
+.metric-num {{ font-size:1.5rem; font-weight:500; line-height:1.1; color:var(--ink);
+  font-family:'JetBrains Mono',monospace; }}
+.signal-card {{ background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--muted); border-radius:0; padding:10px 14px;
+  margin-bottom:8px; }}
+.signal-card.buy {{ border-left-color:var(--green); }}
+.signal-card.sell {{ border-left-color:var(--signal); }}
+.signal-card.hold {{ border-left-color:var(--gold); }}
+.conf-num {{ font-size:1.35rem; font-weight:500; font-family:'JetBrains Mono',monospace; }}
+.conf-num.buy {{ color:var(--green); }}
+.conf-num.sell {{ color:var(--signal); }}
+.conf-num.hold {{ color:var(--gold); }}
 
 /* motion: fade-up + pulse */
 @keyframes fadeUp {{ from {{ opacity:0; transform:translateY(12px); }} to {{ opacity:1; transform:none; }} }}

@@ -27,3 +27,24 @@ def test_signal_chip_colours():
     assert "chip-green" in components.signal_chip("BUY")
     assert "chip-red" in components.signal_chip("SELL")
     assert "chip-gold" in components.signal_chip("HOLD")
+
+
+def test_terminal_theme_present_and_complete():
+    assert "terminal" in themes.THEME_NAMES
+    assert set(themes.THEMES["terminal"]) == set(themes.THEMES["aura"])
+
+
+def test_terminal_css_has_component_classes():
+    block = themes.css("terminal")
+    for cls in (".metric-tile", ".metric-num", ".signal-card", ".conf-num"):
+        assert cls in block
+
+
+def test_component_classes_present_in_all_themes():
+    for name in themes.THEME_NAMES:
+        block = themes.css(name)
+        assert ".metric-tile" in block and ".signal-card" in block
+
+
+def test_reface_keeps_sharp_corners():
+    assert "border-radius:0" in themes.css("terminal")

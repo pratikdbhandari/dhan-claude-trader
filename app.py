@@ -162,15 +162,18 @@ buffer = max(0.0, cfg.max_daily_loss + dpnl)
 globally_blocked = dpnl <= -cfg.max_daily_loss or open_count >= cfg.max_open_positions
 
 r1, r2, r3, r4 = st.columns(4)
-pnl_cls = "pnl-pos" if dpnl >= 0 else "pnl-neg"
-r1.markdown(f"**Today P&L**<br><span class='{pnl_cls}'>₹{dpnl:,.0f}</span>",
+pnl_cls = "buy" if dpnl >= 0 else "sell"
+r1.markdown(f"<div class='metric-tile'><div class='metric-label'>Today P&L</div>"
+            f"<div class='metric-num {pnl_cls}'>₹{dpnl:,.0f}</div></div>",
             unsafe_allow_html=True)
-r2.markdown(f"**Loss buffer**<br>₹{buffer:,.0f} / ₹{cfg.max_daily_loss:,.0f}",
+r2.markdown(f"<div class='metric-tile'><div class='metric-label'>Loss buffer</div>"
+            f"<div class='metric-num'>₹{buffer:,.0f}</div></div>", unsafe_allow_html=True)
+r3.markdown(f"<div class='metric-tile'><div class='metric-label'>Open positions</div>"
+            f"<div class='metric-num'>{open_count}/{cfg.max_open_positions}</div></div>",
             unsafe_allow_html=True)
-r3.markdown(f"**Open positions**<br>{open_count} / {cfg.max_open_positions}",
-            unsafe_allow_html=True)
-r4.markdown(("**Orders**<br>🔴 BLOCKED" if globally_blocked else "**Orders**<br>✅ allowed"),
-            unsafe_allow_html=True)
+_ord = "🔴 blocked" if globally_blocked else "✓ allowed"
+r4.markdown(f"<div class='metric-tile'><div class='metric-label'>Orders</div>"
+            f"<div class='metric-num'>{_ord}</div></div>", unsafe_allow_html=True)
 if globally_blocked:
     st.error("New orders blocked: risk limit reached.")
 
@@ -252,9 +255,9 @@ with left:
                 f"<span class='chip'>{p.provider} {p.signal.value[:1]}{p.confidence}</span>"
                 for p in cs.providers)
             st.markdown(
-                f"<div class='card'><b>{instr.symbol}</b> · "
+                f"<div class='signal-card {cls}'><b>{instr.symbol}</b> · "
                 f"<span class='muted'>{snap.regime.value}</span> &nbsp; "
-                f"<span class='{cls}'>{sig.value} {cs.avg_confidence}%</span> "
+                f"<span class='conf-num {cls}'>{sig.value} {cs.avg_confidence}%</span> "
                 f"<span class='muted'>agree {cs.agreement_pct}%</span> &nbsp; "
                 f"<span style='color:{qcolor};font-weight:700'>Quality {gate.score} {qlabel}</span><br>"
                 f"<span class='muted'>entry {snap_d.get('entry')} · SL {snap_d.get('stop_loss')} "
@@ -312,6 +315,17 @@ with right:
                                security_id=str(p.get("securityId")), kind="EQUITY")
             res = dhan.exit_position(instr)
             st.toast(f"Exit: {res.status}")
+
+    st.markdown("<div class='metric-label'>BTST book</div>", unsafe_allow_html=True)
+    from data.journal import open_btst_book
+    _btst = open_btst_book(journal, mode=mode)
+    if _btst:
+        for b in _btst:
+            st.markdown(f"<div class='card'><b>{b['symbol']}</b> qty {b['qty']} · "
+                        f"exit {b['planned_exit_date']} · tgt {b['plan_target']}</div>",
+                        unsafe_allow_html=True)
+    else:
+        st.caption("No open BTST positions.")
 
 # ---------------------------------------------------------------- alerts
 _rc_for_alert = None
