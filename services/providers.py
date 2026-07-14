@@ -59,6 +59,25 @@ def call_provider(spec: dict, prompt: str, client) -> ProviderSignal:
         latency_ms=int((time.time() - start) * 1000))
 
 
+def _log_usage(model: str, resp) -> None:
+    """Best-effort: pull token usage off an SDK response and log the run cost.
+    Never raises — a cost-log failure must not affect signal generation."""
+    try:
+        from services import cost
+        u = getattr(resp, "usage", None)
+        if u is None:
+            return
+        in_tok = getattr(u, "input_tokens", None)
+        if in_tok is None:
+            in_tok = getattr(u, "prompt_tokens", 0)
+        out_tok = getattr(u, "output_tokens", None)
+        if out_tok is None:
+            out_tok = getattr(u, "completion_tokens", 0)
+        cost.log_run(model, int(in_tok or 0), int(out_tok or 0))
+    except Exception:                              # noqa: BLE001
+        pass
+
+
 def make_client(spec: dict, api_key: str, _openai_cls=None, _anthropic_cls=None):
     """Return client(prompt)->str for a real provider. SDK classes injectable for tests."""
     kind = spec.get("kind", "openai")
@@ -72,6 +91,7 @@ def make_client(spec: dict, api_key: str, _openai_cls=None, _anthropic_cls=None)
             resp = sdk.messages.create(
                 model=model, max_tokens=512,
                 messages=[{"role": "user", "content": prompt}])
+            _log_usage(model, resp)
             return resp.content[0].text
         return call
 
@@ -83,5 +103,6 @@ def make_client(spec: dict, api_key: str, _openai_cls=None, _anthropic_cls=None)
         resp = sdk.chat.completions.create(
             model=model, max_tokens=512,
             messages=[{"role": "user", "content": prompt}])
+        _log_usage(model, resp)
         return resp.choices[0].message.content
     return call
