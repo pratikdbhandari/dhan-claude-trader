@@ -147,6 +147,18 @@ if time.time() - ss["last_refresh"] > 300:
     ss["signal_cache"] = {}
     ss["last_refresh"] = time.time()
 
+# ---------------------------------------------------------------- kill-switch
+from services import kill_switch as _ks
+if _ks.is_halted():
+    st.error("🔴 TRADING HALTED by kill-switch — no orders will be placed.")
+    if st.button("▶ Resume trading"):
+        _ks.resume()
+        st.rerun()
+else:
+    if st.button("🔴 HALT trading"):
+        _ks.halt("manual halt from dashboard")
+        st.rerun()
+
 # ---------------------------------------------------------------- risk panel
 legs = to_legs(journal, mode=mode)
 try:
@@ -355,8 +367,11 @@ if pending is not None:
             st.success("Risk check ✅ passed")
         else:
             st.error("Blocked: " + "; ".join(rc.reasons))
+        if _ks.is_halted():
+            st.error("🔴 Halted — resume trading to place orders.")
         col_a, col_b = st.columns(2)
-        if col_a.button("✓ Place Order", disabled=not rc.allowed, type="primary"):
+        if col_a.button("✓ Place Order", disabled=not rc.allowed or _ks.is_halted(),
+                        type="primary"):
             res = trade_controller.confirm_and_place(
                 pending, dhan_client=dhan, journal_conn=journal,
                 consensus=req.source_signal)

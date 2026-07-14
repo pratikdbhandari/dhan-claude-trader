@@ -33,3 +33,6 @@ Thumbs.db
 build/
 dist/
 *.spec.bak
+
+# runtime audit ledger
+audit.jsonl
