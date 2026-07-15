@@ -9,11 +9,21 @@
   <script src="/static/app.js" defer></script>
 </head>
 <body>
+  {% set p = request.url.path %}
   <nav class="sidebar">
     <div class="brand">Dhan-Claude</div>
-    <a href="/">Dashboard</a><a href="/reports">Reports</a><a href="/screener">Screener</a>
-    <a href="/backtest">Backtest</a><a href="/options">Options</a><a href="/btst">BTST</a>
-    <a href="/settings">Settings</a><a href="/golive">Go-Live</a>
+    <a href="/" class="{{ 'active' if p == '/' else '' }}">Dashboard</a>
+    <a href="/reports" class="{{ 'active' if p.startswith('/reports') else '' }}">Reports</a>
+    <a href="/screener" class="{{ 'active' if p.startswith('/screener') else '' }}">Screener</a>
+    <a href="/backtest" class="{{ 'active' if p.startswith('/backtest') else '' }}">Backtest</a>
+    <a href="/options" class="{{ 'active' if p.startswith('/options') else '' }}">Options</a>
+    <a href="/btst" class="{{ 'active' if p.startswith('/btst') else '' }}">BTST</a>
+    <a href="/settings" class="{{ 'active' if p.startswith('/settings') else '' }}">Settings</a>
+    <a href="/golive" class="{{ 'active' if p.startswith('/golive') else '' }}">Go-Live</a>
+    <div class="spacer"></div>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">
+      <span id="theme-icon">◐</span> <span id="theme-label">Theme</span>
+    </button>
   </nav>
   <main class="content">
     {% block halt_banner %}{% endblock %}

@@ -1,6 +1,6 @@
 {% if not expiries %}<div class="banner warn">No expiries returned (Dhan options data unavailable).</div>
 {% else %}
 <p class="muted">Expiry {{ expiries[0] }} · {{ rows|length }} strikes</p>
-<table><tr><th>Strike</th><th>CE ltp</th><th>PE ltp</th></tr>
-{% for r in rows[:15] %}<tr><td>{{ r.strike }}</td><td>{{ r.ce.ltp }}</td><td>{{ r.pe.ltp }}</td></tr>{% endfor %}
-</table>{% endif %}
+<div class="tablewrap"><table><thead><tr><th>Strike</th><th>CE ltp</th><th>PE ltp</th></tr></thead><tbody>
+{% for r in rows[:15] %}<tr><td class="tnum">{{ r.strike }}</td><td class="tnum">{{ r.ce.ltp }}</td><td class="tnum">{{ r.pe.ltp }}</td></tr>{% endfor %}
+</tbody></table></div>{% endif %}

@@ -1,13 +1,17 @@
-<div class="banner warn">⚠ Confirm order — step 2 of 2</div>
-<div class="card {{ req.side.value.lower() }}">
-  <b>{{ symbol }}</b> {{ req.side.value }} {{ req.qty }} @ ₹{{ req.price }}
-  <span class="muted">({{ req.product_type }})</span>
-  {% if rc.allowed %}<div class="banner ok">Risk check ✅ passed</div>
+<div class="modal">
+  <h3>Confirm order <span class="muted">— step 2 of 2</span></h3>
+  <div class="card {{ req.side.value.lower() }}">
+    <div class="row1"><span class="sym">{{ symbol }}</span>
+      <span class="conf {{ req.side.value.lower() }}">{{ req.side.value }}</span></div>
+    <div class="plan">{{ req.qty }} @ ₹{{ req.price }} · {{ req.product_type }}</div>
+  </div>
+  {% if rc.allowed %}<div class="banner ok">✓ Risk check passed</div>
   {% else %}<div class="banner err">Blocked: {{ rc.reasons|join('; ') }}</div>{% endif %}
   {% if halted %}<div class="banner halt">🔴 Halted — resume to place.</div>{% endif %}
-  <div style="display:flex;gap:8px;margin-top:8px">
+  <div class="actions">
     <button class="go" hx-post="/dashboard/place/{{ symbol }}" hx-target="#toast" hx-swap="innerHTML"
+            hx-on::after-request="document.getElementById('dialog').innerHTML=''"
             {% if not rc.allowed or halted %}disabled{% endif %}>✓ Place order</button>
-    <button onclick="document.getElementById('dialog').innerHTML=''">Cancel</button>
+    <button class="ghost" onclick="document.getElementById('dialog').innerHTML=''">Cancel</button>
   </div>
 </div>
