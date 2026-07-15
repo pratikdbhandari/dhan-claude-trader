@@ -1,25 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Reports — Dhan-Claude Trader{% endblock %}
 {% block body %}
-<h2>Reports &amp; Accounting <span class="muted">{{ mode }}</span></h2>
+<div class="pagehead"><h2>Reports &amp; Accounting</h2><span class="pill">{{ mode }}</span></div>
 <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
-  <div class="tile"><div class="label">Net realized</div><div class="num g">₹{{ '%.2f'|format(stmt.net_realized) }}</div></div>
-  <div class="tile"><div class="label">Unrealized</div><div class="num">₹{{ '%.2f'|format(stmt.unrealized) }}</div></div>
-  <div class="tile"><div class="label">Total P&L</div><div class="num">₹{{ '%.2f'|format(stmt.total_pnl) }}</div></div>
+  <div class="tile"><div class="label">Net realized</div><div class="num {{ 'g' if stmt.net_realized>=0 else 'r' }}">₹{{ '{:,.2f}'.format(stmt.net_realized) }}</div></div>
+  <div class="tile"><div class="label">Unrealized</div><div class="num">₹{{ '{:,.2f}'.format(stmt.unrealized) }}</div></div>
+  <div class="tile"><div class="label">Total P&amp;L</div><div class="num {{ 'g' if stmt.total_pnl>=0 else 'r' }}">₹{{ '{:,.2f}'.format(stmt.total_pnl) }}</div></div>
 </div>
 <h3>Equity curve</h3>
 <div id="equity" class="chart"></div>
 <script type="application/json" class="plotly-fig" data-target="equity">{{ equity_json|safe }}</script>
 <h3>Provider accuracy</h3>
-<div id="accuracy" class="chart" style="height:220px"></div>
+<div id="accuracy" class="chart" style="height:240px"></div>
 <script type="application/json" class="plotly-fig" data-target="accuracy">{{ accuracy_json|safe }}</script>
 <h3>🧠 Behavior — disposition effect</h3>
 <div class="banner {{ 'warn' if disp.present else 'ok' }}">{{ disp.verdict }}</div>
 <h3>💸 AI cost</h3>
-<p class="muted">Today ₹{{ '%.2f'|format(cost_today.total_cost) }} · This month ₹{{ '%.2f'|format(cost_month.total_cost) }}</p>
+<div class="tiles" style="grid-template-columns:repeat(2,1fr)">
+  <div class="tile"><div class="label">Today</div><div class="num">₹{{ '{:,.2f}'.format(cost_today.total_cost) }}</div></div>
+  <div class="tile"><div class="label">This month</div><div class="num">₹{{ '{:,.2f}'.format(cost_month.total_cost) }}</div></div>
+</div>
 <h3>🧾 Audit ledger</h3>
-<table><tr><th>ts</th><th>event</th><th>detail</th></tr>
-{% for e in audit %}<tr><td>{{ e.ts }}</td><td>{{ e.event }}</td><td>{{ e.detail }}</td></tr>{% endfor %}
+<div class="tablewrap"><table><thead><tr><th>Time</th><th>Event</th><th>Detail</th></tr></thead><tbody>
+{% for e in audit %}<tr><td class="tnum">{{ e.ts }}</td><td>{{ e.event }}</td><td>{{ e.detail }}</td></tr>{% endfor %}
 {% if not audit %}<tr><td colspan="3" class="muted">No audit events yet.</td></tr>{% endif %}
-</table>
+</tbody></table></div>
 {% endblock %}

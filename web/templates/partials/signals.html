@@ -1,17 +1,20 @@
 {% for c in cards %}
   {% if c.insufficient %}
-    <div class="card"><b>{{ c.symbol }}</b> <span class="muted">insufficient candle data</span></div>
+    <div class="card"><span class="sym">{{ c.symbol }}</span> <span class="muted">insufficient candle data</span></div>
   {% elif c.error %}
-    <div class="card"><b>{{ c.symbol }}</b> <span class="muted">data error: {{ c.error }}</span></div>
+    <div class="card"><span class="sym">{{ c.symbol }}</span> <span class="muted">data error: {{ c.error }}</span></div>
   {% else %}
     <div class="card {{ c.cls }}">
-      <b>{{ c.symbol }}</b> <span class="muted">{{ c.regime }}</span>
-      <span class="conf {{ c.cls }}">{{ c.signal }} {{ c.conf }}%</span>
-      <span class="muted">agree {{ c.agree }}%</span>
-      <span class="chip {{ 'q' if c.qpass else 'qlow' }}">Quality {{ c.quality }} {{ c.qlabel }}</span>
-      <div class="muted">entry {{ c.entry }} · SL {{ c.sl }} · tgt {{ c.tgt }}</div>
+      <div class="row1">
+        <span><span class="sym">{{ c.symbol }}</span> <span class="muted">{{ c.regime }}</span></span>
+        <span>
+          <span class="conf {{ c.cls }}">{{ c.signal }} {{ c.conf }}%</span>
+          <span class="chip {{ 'q' if c.qpass else 'qlow' }}">Q {{ c.quality }} {{ c.qlabel }}</span>
+        </span>
+      </div>
+      <div class="plan">entry {{ c.entry }} · SL {{ c.sl }} · tgt {{ c.tgt }} · <span class="muted">agree {{ c.agree }}%</span></div>
       {% if c.selectable %}
-        <button class="go" hx-get="/dashboard/confirm/{{ c.symbol }}" hx-target="#dialog" hx-swap="innerHTML">Select {{ c.symbol }} →</button>
+        <div class="actions"><button class="go" hx-get="/dashboard/confirm/{{ c.symbol }}" hx-target="#dialog" hx-swap="innerHTML">Select {{ c.symbol }} →</button></div>
       {% endif %}
     </div>
   {% endif %}
