@@ -147,11 +147,22 @@ def _start_streamlit(port: int, app_path: Path) -> None:
 
 
 def _start_web(port: int) -> None:
-    """Serve the HTML web app headless (replaces the Streamlit server)."""
+    """Serve the HTML web app headless (replaces the Streamlit server).
+
+    In a windowed PyInstaller build sys.stdout/stderr are None, which makes
+    uvicorn's colourised logging config crash (isatty on None). Give it real
+    stream stand-ins and disable its logging config so it never touches stdout."""
     try:
+        import io
+        import sys
+        if sys.stdout is None:
+            sys.stdout = io.StringIO()
+        if sys.stderr is None:
+            sys.stderr = io.StringIO()
         import uvicorn
         from web.server import app
-        uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+        uvicorn.run(app, host="127.0.0.1", port=port, log_config=None,
+                    log_level="warning")
     except Exception:                              # noqa: BLE001
         log.exception("web server thread crashed")
 
