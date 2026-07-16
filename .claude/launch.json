@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "web.server:app", "--host", "127.0.0.1", "--port", "8501"],
+      "port": 8501
+    },
+    {
       "name": "streamlit-preview",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "streamlit", "run", "app.py", "--server.port", "8540", "--server.headless", "true"],

@@ -11,6 +11,7 @@
   </span>
 </div>
 <p class="muted">AI recommends · you confirm every trade.</p>
+<div id="ticker" hx-get="/live/partials/ticker" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
 {% if panel.err %}<div class="banner err">Dhan read failed: {{ panel.err }}</div>{% endif %}
 <div class="tiles">
   <div class="tile"><div class="label">Today P&amp;L</div><div class="num {{ 'g' if panel.dpnl>=0 else 'r' }}">₹{{ '{:,.0f}'.format(panel.dpnl) }}</div></div>

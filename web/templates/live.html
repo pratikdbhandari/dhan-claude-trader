@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Live Market — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h2>Live Market</h2>
+  <span class="pill {{ 'live' if status.open else '' }}" id="mkt-status">{{ status.label }}</span>
+</div>
+<p class="muted">Streaming from Dhan Data API · rates every 5s · movers every 15s · chart every 60s.</p>
+
+<div id="ticker" hx-get="/live/partials/ticker" hx-trigger="load, every 5s" hx-swap="innerHTML">
+  <div class="muted"><span class="spinner"></span> Loading indices…</div>
+</div>
+
+<div class="live-grid">
+  <section>
+    <h3>Watchlist <span class="muted">live</span></h3>
+    <div id="watch" hx-get="/live/partials/watch" hx-trigger="load, every 5s" hx-swap="innerHTML">
+      <div class="muted"><span class="spinner"></span> Loading rates…</div>
+    </div>
+  </section>
+  <section>
+    <h3>Top movers <span class="muted">NIFTY-50</span></h3>
+    <div id="movers" hx-get="/live/partials/movers" hx-trigger="load, every 15s" hx-swap="innerHTML">
+      <div class="muted"><span class="spinner"></span> Scanning universe…</div>
+    </div>
+  </section>
+</div>
+
+<h3>Global markets <span class="muted">what moves India overnight</span></h3>
+<div id="global" hx-get="/live/partials/global" hx-trigger="load, every 300s" hx-swap="innerHTML">
+  <div class="muted"><span class="spinner"></span> Loading world markets…</div>
+</div>
+
+<h3>Live chart</h3>
+<div class="chart-controls" id="chartctl">
+  <select name="symbol" id="sel-symbol">
+    {% for s in symbols %}<option value="{{ s }}" {{ 'selected' if s == 'NIFTY' else '' }}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="interval" id="sel-interval">
+    {% for v, label in intervals %}<option value="{{ v }}" {{ 'selected' if v == '15' else '' }}>{{ label }}</option>{% endfor %}
+  </select>
+  <span id="ci" class="htmx-indicator muted"><span class="spinner"></span> updating…</span>
+</div>
+<div id="chartbox" class="card"
+     hx-get="/live/partials/chart" hx-include="#chartctl select"
+     hx-trigger="load, change from:#chartctl, every 60s"
+     hx-swap="innerHTML" hx-indicator="#ci">
+  <div class="muted"><span class="spinner"></span> Loading chart…</div>
+</div>
+{% endblock %}

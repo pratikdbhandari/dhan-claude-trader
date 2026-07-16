@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ symbol }} analysis — Dhan-Claude Trader{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h2>{{ symbol }} <span class="tag">{{ kind }}</span></h2>
+  <span style="display:flex;gap:8px;align-items:center">
+    <span class="pill {{ 'paper' if mode=='PAPER' else 'live' }}">{{ mode }}</span>
+    <a class="ghost" href="/live" style="font-size:12.5px">← Live Market</a>
+  </span>
+</div>
+
+{% if err %}
+  <div class="banner err">{{ err }}</div>
+{% elif a %}
+  <div class="verdict {{ a.verdict|lower|replace(' ','-') }}">
+    <div class="verdict-word">{{ a.verdict }}</div>
+    <div>
+      <div class="verdict-line">{{ a.signal }}{% if a.signal != 'HOLD' %} · {{ a.confidence }}% confidence · agreement {{ a.agreement }}%{% endif %} · {{ a.regime }} regime · {{ a.style }}</div>
+      <div class="muted">{{ a.verdict_why }}</div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="label">Last price</div><div class="num">{{ '{:,.2f}'.format(a.last) }}</div></div>
+    <div class="tile"><div class="label">Quality score</div><div class="num {{ 'g' if a.gate.passed else 'r' }}">{{ a.gate.score }}<span class="muted" style="font-size:14px">/100</span></div></div>
+    <div class="tile"><div class="label">Net score</div><div class="num {{ 'g' if a.net_score>=0 else 'r' }}">{{ '%+.3f'|format(a.net_score) }}</div></div>
+    <div class="tile"><div class="label">Votes B/S/H</div><div class="num">{{ a.buy_count }}/{{ a.sell_count }}/{{ a.hold_count }}</div></div>
+  </div>
+
+  {% if a.signal != 'HOLD' and a.entry is not none %}
+  <h3>Trade plan</h3>
+  <div class="tiles">
+    <div class="tile"><div class="label">Entry</div><div class="num">{{ '{:,.2f}'.format(a.entry) }}</div></div>
+    <div class="tile"><div class="label">Stop loss</div><div class="num r">{{ '{:,.2f}'.format(a.stop_loss) if a.stop_loss is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">Target</div><div class="num g">{{ '{:,.2f}'.format(a.target) if a.target is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">R:R {% if qty %}· qty{% endif %}</div><div class="num">{{ a.rr if a.rr is not none else '—' }}{% if qty %} <span class="muted" style="font-size:14px">× {{ qty }}</span>{% endif %}</div></div>
+  </div>
+  {% endif %}
+
+  <div id="chartbox" class="card"
+       hx-get="/live/partials/chart?symbol={{ symbol }}&interval={{ chart_interval }}"
+       hx-trigger="load, every 60s" hx-swap="innerHTML">
+    <div class="muted"><span class="spinner"></span> Loading chart…</div>
+  </div>
+
+  <div class="live-grid" style="margin-top:14px">
+    <section>
+      <h3 class="g">✓ Why this trade could work</h3>
+      {% for p in a.pros %}<div class="reason pro">{{ p }}</div>
+      {% else %}<div class="muted">Nothing speaks for it right now.</div>{% endfor %}
+    </section>
+    <section>
+      <h3 class="r">⚠ Why it could fail / should be avoided</h3>
+      {% for c in a.cons %}<div class="reason con">{{ c }}</div>
+      {% else %}<div class="muted">No red flags detected.</div>{% endfor %}
+    </section>
+  </div>
+
+  {% if a.global %}
+  <h3>Global drivers for {{ symbol }}
+    <span class="sigbadge {{ 'buy' if a.global.cue=='SUPPORTIVE' else ('sell' if a.global.cue=='AGAINST' else 'hold') }}">{{ a.global.cue }}</span>
+    {% if a.global.score is not none %}<span class="muted">net {{ '%+.2f'|format(a.global.score) }}</span>{% endif %}
+    <span class="muted">· sector {{ a.global.sector }}</span>
+  </h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>World market</th><th class="tnum">Move</th><th>Effect now</th><th>Why it matters to {{ symbol }}</th></tr></thead>
+    <tbody>
+    {% for d in a.global.drivers %}
+      <tr>
+        <td><b>{{ d.name }}</b></td>
+        <td class="tnum {{ 'g' if d.pct is not none and d.pct >= 0 else 'r' }}">{{ '%+.2f'|format(d.pct) ~ '%' if d.pct is not none else '—' }}</td>
+        <td>{% if d.aligned is not none %}<span class="{{ 'g' if d.aligned >= 0 else 'r' }}">{{ 'supports' if d.aligned >= 0 else 'hurts' }} {{ '%+.2f'|format(d.aligned) }}</span>{% else %}<span class="muted">context</span>{% endif %}</td>
+        <td class="muted">{{ d.why }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+
+  {% if a.events %}
+  <h3>Corporate events for {{ symbol }} <span class="muted">orders · results · management · pledges · holdings</span></h3>
+  {% for e in a.events %}
+    <div class="reason {{ 'pro' if e.sentiment=='POSITIVE' else ('con' if e.sentiment=='NEGATIVE' else '') }}">
+      {% for c in e.categories %}<span class="chip evt">{{ c }}</span>{% endfor %} {{ e.title }}
+    </div>
+  {% endfor %}
+  {% endif %}
+
+  <h3>News impact on {{ symbol }} <span class="chip {{ 'q' if a.news.net=='POSITIVE' else ('qlow' if a.news.net=='NEGATIVE' else '') }}">net {{ a.news.net }}</span></h3>
+  <div class="live-grid">
+    <section>
+      {% if a.news.positive %}<div class="mv-head g">▲ Positive</div>
+        {% for h in a.news.positive %}<div class="reason pro">{{ h }}</div>{% endfor %}{% endif %}
+      {% if a.news.negative %}<div class="mv-head r">▼ Negative</div>
+        {% for h in a.news.negative %}<div class="reason con">{{ h }}</div>{% endfor %}{% endif %}
+      {% if a.news.neutral %}<div class="mv-head">◆ Neutral mentions</div>
+        {% for h in a.news.neutral %}<div class="reason">{{ h }}</div>{% endfor %}{% endif %}
+      {% if not (a.news.positive or a.news.negative or a.news.neutral) %}
+        <div class="muted">No headlines mentioning {{ symbol }} in the last fetch — see market context →</div>{% endif %}
+      {% if a.event_flags %}<div class="banner warn" style="margin-top:8px">Event flags today: {{ a.event_flags|join(', ') }}</div>{% endif %}
+    </section>
+    <section>
+      <div class="mv-head">Market context</div>
+      {% for m in a.news.market %}
+        <div class="reason {{ 'pro' if m.sentiment=='POSITIVE' else ('con' if m.sentiment=='NEGATIVE' else '') }}">{{ m.title }}</div>
+      {% else %}<div class="muted">No market headlines fetched.</div>{% endfor %}
+    </section>
+  </div>
+
+  {% if a.fundamentals %}
+  <h3>Fundamentals &amp; shareholding <span class="muted">via Yahoo Finance</span></h3>
+  <div class="tiles">
+    <div class="tile"><div class="label">P/E</div><div class="num">{{ '%.1f'|format(a.fundamentals.pe) if a.fundamentals.pe else '—' }}</div></div>
+    <div class="tile"><div class="label">EPS</div><div class="num">{{ '%.1f'|format(a.fundamentals.eps) if a.fundamentals.eps else '—' }}</div></div>
+    <div class="tile"><div class="label">Market cap</div><div class="num" style="font-size:16px">{{ '₹{:,.0f} Cr'.format(a.fundamentals.market_cap/10000000) if a.fundamentals.market_cap else '—' }}</div></div>
+    <div class="tile"><div class="label">Promoter holding</div><div class="num">{{ a.fundamentals.promoter_pct ~ '%' if a.fundamentals.promoter_pct is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">Institutions (FII+DII)</div><div class="num">{{ a.fundamentals.institution_pct ~ '%' if a.fundamentals.institution_pct is not none else '—' }}</div></div>
+  </div>
+  {% endif %}
+
+  <h3>Indicator readings</h3>
+  <div class="tiles">
+    <div class="tile"><div class="label">RSI (14)</div><div class="num {{ 'r' if a.readings.rsi and (a.readings.rsi>70 or a.readings.rsi<30) else '' }}">{{ a.readings.rsi if a.readings.rsi is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">ADX (trend)</div><div class="num">{{ a.readings.adx if a.readings.adx is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">ATR</div><div class="num">{{ a.readings.atr if a.readings.atr is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">MACD hist</div><div class="num {{ 'g' if a.readings.macd_hist and a.readings.macd_hist>=0 else 'r' }}">{{ a.readings.macd_hist if a.readings.macd_hist is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">EMA 20</div><div class="num">{{ '{:,.2f}'.format(a.readings.ema20) if a.readings.ema20 is not none else '—' }}</div></div>
+    <div class="tile"><div class="label">EMA 50</div><div class="num">{{ '{:,.2f}'.format(a.readings.ema50) if a.readings.ema50 is not none else '—' }}</div></div>
+  </div>
+
+  <h3>Strategy votes <span class="muted">category-weighted confluence</span></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Strategy</th><th>Category</th><th>Vote</th><th class="tnum">Strength</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for v in a.votes %}
+      <tr><td><b>{{ v.name }}</b></td><td>{{ v.category }}</td>
+        <td class="conf {{ v.vote|lower }}" style="font-size:12px">{{ v.vote }}</td>
+        <td class="tnum">{{ v.strength }}</td>
+        <td class="muted">{{ v.detail }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <h3>Category scores</h3>
+  <div class="catbars">
+    {% for cat, s in a.category_scores.items() %}
+      <div class="catbar-row">
+        <span class="catbar-label">{{ cat }}</span>
+        <div class="catbar"><div class="catbar-fill {{ 'g' if s>=0 else 'r' }}" style="width:{{ (s|abs*50)|round(1) }}%;{{ 'margin-left:50%' if s>=0 else 'margin-left:' ~ (50-(s|abs*50))|round(1) ~ '%' }}"></div></div>
+        <span class="tnum {{ 'g' if s>=0 else 'r' }}">{{ '%+.2f'|format(s) }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <p class="muted" style="margin-top:16px">Quality gate: {{ a.gate.reasons|join(' · ') }}{% if a.gate.cautions %} · cautions: {{ a.gate.cautions|join('; ') }}{% endif %}.
+  A high score means a cleaner setup, not a profit guarantee. You confirm every trade on the Dashboard.</p>
+{% endif %}
+{% endblock %}

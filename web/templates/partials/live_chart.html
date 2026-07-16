@@ -1,0 +1,16 @@
+<div class="chart-meta">
+  <b>{{ symbol }}</b> · {{ 'daily' if interval == 'day' else interval + ' min' }} ·
+  last <span class="tnum">{{ '{:,.2f}'.format(last) }}</span> ·
+  <span class="muted">{{ bars }} bars</span>
+  {% if sig %}
+    <span class="sigbadge {{ sig.signal.lower() }}">{{ sig.signal }}
+      {% if not sig.hold %}{{ sig.confidence }}%{% endif %}</span>
+    <span class="muted">{{ sig.regime }} · net {{ '%+.2f'|format(sig.net_score) }}</span>
+    {% if not sig.hold %}
+      <span class="muted tnum">entry {{ sig.entry }} · SL {{ sig.stop_loss }} · tgt {{ sig.target }}</span>
+    {% endif %}
+    <a class="analyze-link" href="/analysis/{{ symbol }}">Full analysis →</a>
+  {% endif %}
+</div>
+<div id="livechart" class="chart"></div>
+<script type="application/json" class="plotly-fig" data-target="livechart">{{ fig|safe }}</script>

@@ -1,0 +1,19 @@
+<div class="mv-grid">
+  <div>
+    <div class="mv-head g">▲ Top gainers</div>
+    {% for q in gainers %}
+      <div class="mv-row rowlink" onclick="window.location='/analysis/{{ q.symbol }}'"><span>{{ q.symbol }}</span>
+        <span class="tnum">{{ '{:,.2f}'.format(q.ltp) }}</span>
+        <span class="tnum g">{{ '%+.2f'|format(q.pct) }}%</span></div>
+    {% else %}<div class="muted">No gainers right now.</div>{% endfor %}
+  </div>
+  <div>
+    <div class="mv-head r">▼ Top losers</div>
+    {% for q in losers %}
+      <div class="mv-row rowlink" onclick="window.location='/analysis/{{ q.symbol }}'"><span>{{ q.symbol }}</span>
+        <span class="tnum">{{ '{:,.2f}'.format(q.ltp) }}</span>
+        <span class="tnum r">{{ '%+.2f'|format(q.pct) }}%</span></div>
+    {% else %}<div class="muted">No losers right now.</div>{% endfor %}
+  </div>
+</div>
+<div class="muted" style="font-size:11px;margin-top:4px">{{ scanned }} of NIFTY-50 scanned</div>

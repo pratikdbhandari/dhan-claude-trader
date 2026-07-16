@@ -1,9 +1,20 @@
 {
-  "_comment": "Instruments to watch. security_id + exchange_segment resolved from the Dhan instrument master by services/instruments.py. Index IDs (NIFTY/BANKNIFTY) are hand-filled because they sit under exch 'NSE' segment 'I' and don't auto-resolve from IDX_I.",
+  "_comment": "Instruments to watch. security_id + exchange_segment resolved from the Dhan instrument master by services/instruments.py. Index IDs are hand-filled because they sit under exch 'NSE'/'BSE' segment 'I' and don't auto-resolve from IDX_I. Equity IDs verified against data/instrument_master.csv. Keep this list modest (~15) — the signal loop fetches candles per instrument; the Live page's movers use the wider universe.json instead.",
   "instruments": [
-    { "symbol": "NIFTY",     "exchange_segment": "IDX_I",  "security_id": "13",   "lot_size": 75,  "kind": "INDEX"  },
-    { "symbol": "BANKNIFTY", "exchange_segment": "IDX_I",  "security_id": "25",   "lot_size": 35,  "kind": "INDEX"  },
-    { "symbol": "RELIANCE",  "exchange_segment": "NSE_EQ", "security_id": "2885", "lot_size": 1,   "kind": "EQUITY" },
-    { "symbol": "HDFCBANK",  "exchange_segment": "NSE_EQ", "security_id": "1333", "lot_size": 1,   "kind": "EQUITY" }
+    { "symbol": "NIFTY",      "exchange_segment": "IDX_I",  "security_id": "13",    "lot_size": 75,  "kind": "INDEX"  },
+    { "symbol": "BANKNIFTY",  "exchange_segment": "IDX_I",  "security_id": "25",    "lot_size": 35,  "kind": "INDEX"  },
+    { "symbol": "RELIANCE",   "exchange_segment": "NSE_EQ", "security_id": "2885",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "HDFCBANK",   "exchange_segment": "NSE_EQ", "security_id": "1333",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "TCS",        "exchange_segment": "NSE_EQ", "security_id": "11536", "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "INFY",       "exchange_segment": "NSE_EQ", "security_id": "1594",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "ICICIBANK",  "exchange_segment": "NSE_EQ", "security_id": "4963",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "SBIN",       "exchange_segment": "NSE_EQ", "security_id": "3045",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "ITC",        "exchange_segment": "NSE_EQ", "security_id": "1660",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "LT",         "exchange_segment": "NSE_EQ", "security_id": "11483", "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "AXISBANK",   "exchange_segment": "NSE_EQ", "security_id": "5900",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "BHARTIARTL", "exchange_segment": "NSE_EQ", "security_id": "10604", "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "MARUTI",     "exchange_segment": "NSE_EQ", "security_id": "10999", "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "TATASTEEL",  "exchange_segment": "NSE_EQ", "security_id": "3499",  "lot_size": 1,   "kind": "EQUITY" },
+    { "symbol": "BAJFINANCE", "exchange_segment": "NSE_EQ", "security_id": "317",   "lot_size": 1,   "kind": "EQUITY" }
   ]
 }

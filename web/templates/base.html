@@ -13,6 +13,7 @@
   <nav class="sidebar">
     <div class="brand">Dhan-Claude</div>
     <a href="/" class="{{ 'active' if p == '/' else '' }}">Dashboard</a>
+    <a href="/live" class="{{ 'active' if p.startswith('/live') else '' }}">Live Market</a>
     <a href="/reports" class="{{ 'active' if p.startswith('/reports') else '' }}">Reports</a>
     <a href="/screener" class="{{ 'active' if p.startswith('/screener') else '' }}">Screener</a>
     <a href="/backtest" class="{{ 'active' if p.startswith('/backtest') else '' }}">Backtest</a>

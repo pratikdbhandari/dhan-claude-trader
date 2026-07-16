@@ -1,0 +1,24 @@
+{% if quotes %}
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>Symbol</th><th class="tnum">LTP</th><th class="tnum">Chg</th><th class="tnum">%</th>
+      <th class="tnum">Open</th><th class="tnum">High</th><th class="tnum">Low</th><th class="tnum">Prev close</th></tr></thead>
+    <tbody>
+    {% for q in quotes %}
+      <tr class="rowlink" onclick="window.location='/analysis/{{ q.symbol }}'">
+        <td><b>{{ q.symbol }}</b>{% if q.kind == 'INDEX' %} <span class="tag">IDX</span>{% endif %}</td>
+        <td class="tnum">{{ '{:,.2f}'.format(q.ltp) }}</td>
+        <td class="tnum {{ 'g' if q.change >= 0 else 'r' }}">{{ '%+.2f'|format(q.change) }}</td>
+        <td class="tnum {{ 'g' if q.pct >= 0 else 'r' }}">{{ '%+.2f'|format(q.pct) }}%</td>
+        <td class="tnum">{{ '{:,.2f}'.format(q.open) }}</td>
+        <td class="tnum">{{ '{:,.2f}'.format(q.high) }}</td>
+        <td class="tnum">{{ '{:,.2f}'.format(q.low) }}</td>
+        <td class="tnum">{{ '{:,.2f}'.format(q.prev_close) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="muted">No live rates yet — Dhan may be throttling; retrying automatically.</div>
+{% endif %}

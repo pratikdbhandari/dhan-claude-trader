@@ -1,0 +1,31 @@
+{% if groups %}
+<div class="chart-meta" style="margin-bottom:8px">
+  Global sentiment:
+  <span class="sigbadge {{ 'buy' if risk.label == 'RISK-ON' else ('sell' if risk.label == 'RISK-OFF' else 'hold') }}">{{ risk.label }}</span>
+  {% if risk.avg is not none %}<span class="muted">majors avg {{ '%+.2f'|format(risk.avg) }}%</span>{% endif %}
+</div>
+<div class="world-grid">
+  {% for group, rows in groups.items() %}
+  <div>
+    <div class="mv-head">{{ group }}</div>
+    {% for r in rows %}
+      <div class="mv-row"><span>{{ r.name }}</span>
+        <span class="tnum">{{ '{:,.2f}'.format(r.last) }}</span>
+        <span class="tnum {{ 'g' if r.pct >= 0 else 'r' }}">{{ '%+.2f'|format(r.pct) }}%</span></div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="muted">World market data unavailable right now — retrying in the background.</div>
+{% endif %}
+{% if flows %}
+<div class="mv-head" style="margin-top:10px">FII / DII cash flows (NSE, ₹ crore{% if flows[0] %} · {{ flows[0].date }}{% endif %})</div>
+<div class="mv-grid">
+  {% for f in flows %}
+  <div class="mv-row"><span>{{ f.category }}</span>
+    <span class="tnum muted">buy {{ '{:,.0f}'.format(f.buy) }} · sell {{ '{:,.0f}'.format(f.sell) }}</span>
+    <span class="tnum {{ 'g' if f.net >= 0 else 'r' }}">net {{ '{:+,.0f}'.format(f.net) }}</span></div>
+  {% endfor %}
+</div>
+{% endif %}

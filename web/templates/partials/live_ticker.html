@@ -1,0 +1,15 @@
+<div class="ticker-strip">
+  {% for q in quotes %}
+  <div class="tick {{ 'up' if q.change >= 0 else 'down' }}">
+    <span class="tick-sym">{{ q.symbol }}</span>
+    <span class="tick-ltp tnum">{{ '{:,.2f}'.format(q.ltp) }}</span>
+    <span class="tick-chg tnum">{{ '%+.2f'|format(q.change) }} ({{ '%+.2f'|format(q.pct) }}%)</span>
+  </div>
+  {% else %}
+  <div class="muted">Waiting for index data… (check Dhan token in Settings if this persists)</div>
+  {% endfor %}
+</div>
+{% if quotes %}<script>
+  var el = document.getElementById('mkt-status');
+  if (el) { el.textContent = {{ status.label|tojson }}; el.classList.toggle('live', {{ 'true' if status.open else 'false' }}); }
+</script>{% endif %}

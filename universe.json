@@ -1,0 +1,348 @@
+{
+  "_comment": "Movers universe (NIFTY-50 constituents). security_id values verified against the cached Dhan instrument master (data/instrument_master.csv). Used by services/market_feed.py for top gainers/losers on the Live page.",
+  "instruments": [
+    {
+      "symbol": "ADANIENT",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "25",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "ADANIPORTS",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "15083",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "APOLLOHOSP",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "157",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "236",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "AXISBANK",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "5900",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "BAJAJ-AUTO",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "16669",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "16675",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "317",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "10604",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "BPCL",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "526",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "BRITANNIA",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "547",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "CIPLA",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "694",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "COALINDIA",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "20374",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "DRREDDY",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "881",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "EICHERMOT",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "910",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "GRASIM",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1232",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "HCLTECH",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "7229",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1333",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "HDFCLIFE",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "467",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "HEROMOTOCO",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1348",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "HINDALCO",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1363",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "HINDUNILVR",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1394",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "ICICIBANK",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "4963",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "INDUSINDBK",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "5258",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "INFY",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1594",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "ITC",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1660",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "JIOFIN",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "18143",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "11723",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1922",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "LT",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "11483",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "M&M",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "2031",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "MARUTI",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "10999",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "17963",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "NTPC",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "11630",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "ONGC",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "2475",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "POWERGRID",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "14977",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "RELIANCE",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "2885",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "SBILIFE",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "21808",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "SBIN",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "3045",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "4306",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "3351",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "TATACONSUM",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "3432",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "3499",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "TCS",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "11536",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "TECHM",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "13538",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "TITAN",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "3506",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "TRENT",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "1964",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "ULTRACEMCO",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "11532",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    },
+    {
+      "symbol": "WIPRO",
+      "exchange_segment": "NSE_EQ",
+      "security_id": "3787",
+      "lot_size": 1,
+      "kind": "EQUITY"
+    }
+  ]
+}

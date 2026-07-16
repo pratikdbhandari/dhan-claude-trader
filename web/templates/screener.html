@@ -2,7 +2,17 @@
 {% block title %}Screener — Dhan-Claude Trader{% endblock %}
 {% block body %}
 <h2>🔍 Strategy Screener</h2>
-<button hx-post="/screener/run" hx-target="#rows" hx-swap="innerHTML" hx-indicator="#si">Run scan</button>
-<span id="si" class="htmx-indicator muted"> scanning…</span>
+<p class="muted">Scan for live trade setups, ranked by confluence strength. Click any row for the full analysis — why to take or avoid the trade.</p>
+<form id="scanctl" class="chart-controls" onsubmit="return false">
+  <select name="scope">
+    <option value="watchlist" selected>Watchlist (15)</option>
+    <option value="nifty50">NIFTY-50 universe</option>
+  </select>
+  <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:12.5px">
+    <input type="checkbox" name="signals_only" value="true"> setups only (hide HOLD)
+  </label>
+  <button hx-post="/screener/run" hx-target="#rows" hx-swap="innerHTML" hx-indicator="#si" hx-include="#scanctl">Run scan</button>
+  <span id="si" class="htmx-indicator muted"><span class="spinner"></span> scanning… (first NIFTY-50 scan can take ~1 min)</span>
+</form>
 <div id="rows"></div>
 {% endblock %}

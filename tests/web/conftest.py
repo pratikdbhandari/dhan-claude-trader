@@ -40,6 +40,17 @@ class FakeDhan:
                            dhan_order_id=f"PAPER-EXIT-{instrument.symbol}")
 
 
+@pytest.fixture(autouse=True)
+def _clear_candle_cache():
+    """candles_for caches per (segment, security_id); tests reuse ids with
+    different fake candles, so isolate each test."""
+    import web.deps as wdeps
+    wdeps._candle_cache.clear()
+    wdeps._last_candle_call = 0.0
+    yield
+    wdeps._candle_cache.clear()
+
+
 @pytest.fixture
 def fake_dhan():
     return FakeDhan()

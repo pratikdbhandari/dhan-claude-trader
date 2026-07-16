@@ -1,9 +1,11 @@
-<div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Regime</th><th>Signal</th><th>Net</th><th>Buy/Sell/Hold</th></tr></thead><tbody>
+<div class="tablewrap"><table><thead><tr><th>Symbol</th><th>Regime</th><th>Signal</th><th>Net</th><th>Buy/Sell/Hold</th><th></th></tr></thead><tbody>
 {% for r in rows %}
-  {% if r.error %}<tr><td>{{ r.symbol }}</td><td colspan="4" class="muted">{{ r.error }}</td></tr>
-  {% else %}<tr><td><b>{{ r.symbol }}</b></td><td>{{ r.regime }}</td>
+  {% if r.error %}<tr><td>{{ r.symbol }}</td><td colspan="5" class="muted">{{ r.error }}</td></tr>
+  {% else %}<tr class="rowlink" onclick="window.location='/analysis/{{ r.symbol }}'">
+    <td><b>{{ r.symbol }}</b></td><td>{{ r.regime }}</td>
     <td class="conf {{ r.signal|lower }}" style="font-size:13px">{{ r.signal }}</td>
     <td class="tnum">{{ '%.3f'|format(r.net_score) }}</td>
-    <td class="tnum">{{ r.buy }}/{{ r.sell }}/{{ r.hold }}</td></tr>{% endif %}
-{% else %}<tr><td colspan="5" class="muted">No results.</td></tr>{% endfor %}
+    <td class="tnum">{{ r.buy }}/{{ r.sell }}/{{ r.hold }}</td>
+    <td><a class="analyze-link" href="/analysis/{{ r.symbol }}" onclick="event.stopPropagation()">Analyze →</a></td></tr>{% endif %}
+{% else %}<tr><td colspan="6" class="muted">No results.</td></tr>{% endfor %}
 </tbody></table></div>
