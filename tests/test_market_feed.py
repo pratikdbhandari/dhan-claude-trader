@@ -10,7 +10,7 @@ from services import market_feed
 
 
 def _reset_cache():
-    market_feed._cache.update(key=None, ts=0.0, rows={})
+    market_feed._cache.update(key=None, ts=0.0, rows={}, ok_wall=0.0)
     market_feed._last_call_ts = 0.0
 
 
@@ -106,6 +106,45 @@ def test_movers_ranks_by_pct_and_excludes_indices():
     gainers, losers = market_feed.movers(quotes, n=2)
     assert [g.symbol for g in gainers] == ["UP2", "UP1"]
     assert [l.symbol for l in losers] == ["DOWN"]
+
+
+# ---------------------------------------------------------------- staleness
+def test_staleness_before_any_success_is_stale():
+    _reset_cache()
+    s = market_feed.staleness()
+    assert s["stale"] is True and s["age"] is None and s["last"] is None
+
+
+def test_staleness_fresh_after_successful_fetch():
+    _reset_cache()
+    market_feed.fetch_snapshot(FakeSDK(SAMPLE), [NIFTY], now=1.0)
+    s = market_feed.staleness()
+    assert s["stale"] is False and s["age"] == 0 and s["last"]
+
+
+def test_staleness_goes_stale_after_threshold():
+    _reset_cache()
+    market_feed.fetch_snapshot(FakeSDK(SAMPLE), [NIFTY], now=1.0)
+    ok = market_feed._cache["ok_wall"]
+    assert market_feed.staleness(now=ok + market_feed.STALE_AFTER - 1)["stale"] is False
+    late = market_feed.staleness(now=ok + market_feed.STALE_AFTER + 1)
+    assert late["stale"] is True and late["age"] == int(market_feed.STALE_AFTER + 1)
+
+
+def test_dead_token_midsession_serves_stale_but_flags_it():
+    """The 09:21 bug: caches warm, then the broker dies. Prices may stay on
+    screen, but staleness() must stop calling them live."""
+    _reset_cache()
+    sdk = FakeSDK(SAMPLE)
+    rows = market_feed.fetch_snapshot(sdk, [NIFTY], ttl=1.0, now=10.0)
+    ok_before = market_feed._cache["ok_wall"]
+    assert market_feed.staleness()["stale"] is False
+
+    sdk.resp = {"status": "failure", "remarks": "Invalid token", "data": ""}
+    still = market_feed.fetch_snapshot(sdk, [NIFTY], ttl=1.0, now=20.0)
+    assert still == rows                              # stale frame still served
+    assert market_feed._cache["ok_wall"] == ok_before  # success time NOT bumped
+    assert market_feed.staleness(now=ok_before + 31)["stale"] is True
 
 
 def test_load_universe_reads_json(tmp_path):

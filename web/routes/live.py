@@ -84,15 +84,17 @@ def ticker(request: Request):
     rows, *_ = _snapshot()
     quotes = market_feed.quotes_for(rows, INDICES)
     return templates.TemplateResponse("partials/live_ticker.html", {
-        "request": request, "quotes": quotes, "status": _market_status()})
+        "request": request, "quotes": quotes, "status": _market_status(),
+        "feed": market_feed.staleness()})
 
 
 @router.get("/live/partials/watch", response_class=HTMLResponse)
 def watch(request: Request):
     rows, watch_list, _ = _snapshot()
     quotes = market_feed.quotes_for(rows, watch_list)
-    return templates.TemplateResponse("partials/live_watch.html",
-                                      {"request": request, "quotes": quotes})
+    return templates.TemplateResponse("partials/live_watch.html", {
+        "request": request, "quotes": quotes,
+        "feed": market_feed.staleness()})
 
 
 @router.get("/live/partials/global", response_class=HTMLResponse)

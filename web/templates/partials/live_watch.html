@@ -1,5 +1,6 @@
+{% include "partials/feed_status.html" %}
 {% if quotes %}
-<div class="tablewrap">
+<div class="tablewrap {{ 'is-stale' if feed.stale else '' }}">
   <table>
     <thead><tr><th>Symbol</th><th class="tnum">LTP</th><th class="tnum">Chg</th><th class="tnum">%</th>
       <th class="tnum">Open</th><th class="tnum">High</th><th class="tnum">Low</th><th class="tnum">Prev close</th></tr></thead>

@@ -24,8 +24,14 @@ log = logging.getLogger(__name__)
 # minimum spacing between calls to Dhan marketfeed (their limit is ~1/sec)
 _MIN_CALL_GAP = 1.2
 
+# Serving a stale snapshot is correct for a throttled second, but past this the
+# prices on screen are no longer the market's — the UI must say so out loud.
+STALE_AFTER = 30.0
+
 _lock = threading.Lock()
-_cache: dict = {"key": None, "ts": 0.0, "rows": {}}
+# ts/monotonic drives the TTL; ok_wall is wall-clock of the last SUCCESSFUL
+# refresh, used to age the snapshot for the UI.
+_cache: dict = {"key": None, "ts": 0.0, "rows": {}, "ok_wall": 0.0}
 _last_call_ts = 0.0
 
 
@@ -106,10 +112,24 @@ def fetch_snapshot(sdk, instruments: list[Instrument], *, ttl: float = 3.0,
             log.exception("marketfeed ohlc_data failed")
             rows = {}
         if rows:
-            _cache.update(key=key, ts=t, rows=rows)
+            _cache.update(key=key, ts=t, rows=rows, ok_wall=time.time())
             return rows
         # failed/empty: keep serving the previous snapshot if it was for this key
+        # (ok_wall deliberately untouched, so staleness() ages it)
         return _cache["rows"] if _cache["key"] == key else {}
+
+
+def staleness(now: Optional[float] = None) -> dict:
+    """How old the on-screen prices are: seconds since the last SUCCESSFUL
+    marketfeed refresh, a stale flag, and the last-update clock for the UI.
+    `stale` is True before the first success (nothing real has arrived yet)."""
+    with _lock:
+        ok = _cache["ok_wall"]
+    if not ok:
+        return {"age": None, "stale": True, "last": None}
+    age = (time.time() if now is None else now) - ok
+    return {"age": int(age), "stale": age > STALE_AFTER,
+            "last": time.strftime("%H:%M:%S", time.localtime(ok))}
 
 
 def quotes_for(rows: dict[tuple[str, str], dict],

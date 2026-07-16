@@ -1,0 +1,8 @@
+{# Feed freshness. Loud when stale: on-screen prices are no longer the market's. #}
+{% if feed.stale %}
+  <div class="banner err feedstale">⚠ PRICES NOT LIVE — feed stale{% if feed.age is not none %} for {{ '{}s'.format(feed.age) if feed.age < 90 else '{}m'.format(feed.age // 60) }}{% endif %}.
+    {% if feed.last %}Last real update {{ feed.last }}.{% else %}No data received yet.{% endif %}
+    Check Dhan token expiry in <a href="/settings">Settings</a> and your connection.</div>
+{% elif feed.last %}
+  <div class="feedok muted">● live · updated {{ feed.last }}</div>
+{% endif %}

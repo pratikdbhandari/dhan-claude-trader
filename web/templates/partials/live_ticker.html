@@ -1,4 +1,5 @@
-<div class="ticker-strip">
+{% include "partials/feed_status.html" %}
+<div class="ticker-strip {{ 'is-stale' if feed.stale else '' }}">
   {% for q in quotes %}
   <div class="tick {{ 'up' if q.change >= 0 else 'down' }}">
     <span class="tick-sym">{{ q.symbol }}</span>
