@@ -21,8 +21,10 @@ def page(request: Request):
     # secrets are never echoed back — only whether they are already set
     secrets = {k: _has(k) for k in ("DHAN_ACCESS_TOKEN", "ANTHROPIC_API_KEY",
                "GROQ_API_KEY", "CEREBRAS_API_KEY", "MISTRAL_API_KEY")}
+    from web.deps import get_token_status
     return templates.TemplateResponse("settings.html",
-                                      {"request": request, "k": keys, "s": secrets})
+                                      {"request": request, "k": keys, "s": secrets,
+                                       "tok": get_token_status()})
 
 
 @router.post("/settings/save", response_class=HTMLResponse)

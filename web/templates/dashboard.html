@@ -10,7 +10,8 @@
     {% if not halted %}<button class="halt" hx-post="/dashboard/halt" hx-swap="none" hx-on::after-request="location.reload()">Halt trading</button>{% endif %}
   </span>
 </div>
-<p class="muted">AI recommends · you confirm every trade.</p>
+<p class="muted">Indicator consensus · you confirm every trade.</p>
+{% include "partials/token_banner.html" %}
 <div id="ticker" hx-get="/live/partials/ticker" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
 {% if panel.err %}<div class="banner err">Dhan read failed: {{ panel.err }}</div>{% endif %}
 <div class="tiles">

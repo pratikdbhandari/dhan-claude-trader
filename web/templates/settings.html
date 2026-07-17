@@ -5,8 +5,10 @@
 <p class="muted">Keys are stored locally in <code>~/.dhan_claude_trader</code>, never in the repo. Leave a secret blank to keep the existing value.</p>
 <form hx-post="/settings/save" hx-target="#saved" hx-swap="innerHTML">
   <h3>Broker (Dhan)</h3>
+  {% include "partials/token_banner.html" %}
   <p>Client id <input name="dhan_id" value="{{ k.DHAN_CLIENT_ID }}"></p>
-  <p>Access token <input name="dhan_token" type="password" placeholder="{{ '•••• already set' if s.DHAN_ACCESS_TOKEN else 'paste token' }}"></p>
+  <p>Access token <input name="dhan_token" type="password" placeholder="{{ '•••• already set' if s.DHAN_ACCESS_TOKEN else 'paste token' }}">
+    {% if tok.expires_at %}<span class="muted" style="font-size:12px">expires {{ tok.expires_at }}{% if tok.hours_left %} · {{ tok.hours_left }}h left{% endif %}</span>{% endif %}</p>
 
   <h3>AI providers <span class="muted">(only for signal source = api)</span></h3>
   <p>Anthropic key <input name="anthropic_key" type="password" placeholder="{{ '•••• already set' if s.ANTHROPIC_API_KEY else 'blank = off' }}"></p>

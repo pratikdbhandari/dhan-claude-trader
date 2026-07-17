@@ -81,7 +81,7 @@ def dashboard(request: Request):
     panel = _risk_panel(mode, dhan, deps.get_journal(), cfg)
     return templates.TemplateResponse("dashboard.html", {
         "request": request, "mode": mode, "panel": panel, "cfg": cfg,
-        "halted": kill_switch.is_halted()})
+        "halted": kill_switch.is_halted(), "tok": deps.get_token_status()})
 
 
 @router.get("/partials/signals", response_class=HTMLResponse)

@@ -2,10 +2,65 @@
 verifies our PARSERS handle the real response — WITHOUT placing/modifying/cancelling
 any order. Run before the first real trade to catch response-shape mismatches.
 
+Also holds the token pre-flight (token_status) — a network-free check answering
+"will my access token survive the session I am about to trade?".
+
 Pure-ish: run_checks takes an injected client + instruments so it is unit-testable
 with a fake SDK. NEVER calls any write method."""
 from __future__ import annotations
 from dataclasses import dataclass
+from datetime import datetime
+
+
+def _next_close(now: datetime) -> datetime:
+    """End of the next session that could be traded from `now` — today's close if
+    the market has not shut yet, otherwise the next trading day's."""
+    from services.market_clock import CLOSE, IST, next_trading_day
+    is_weekday = now.weekday() < 5
+    day = (now.date() if (is_weekday and now.time() < CLOSE)
+           else next_trading_day(now.date()))
+    return datetime.combine(day, CLOSE, tzinfo=IST)
+
+
+def token_status(token: str | None, now: datetime | None = None) -> dict:
+    """Will the Dhan access token outlive the next session? No network.
+
+    Dhan tokens are short-lived and die silently mid-session — every data call
+    then fails while the UI keeps rendering the last snapshot. Checking the JWT's
+    own `exp` up front turns that into a warning you can act on before the open.
+
+    The signature is NOT verified: we are not the issuer and are not
+    authenticating anything here, only reading the expiry Dhan itself stamped.
+
+    state: OK | SOON | EXPIRED | UNKNOWN  (SOON = dies before the next close)
+    """
+    import jwt
+    from services.market_clock import IST
+
+    now = now or datetime.now(IST)
+    if not token:
+        return {"state": "UNKNOWN", "expires_at": None, "hours_left": None,
+                "detail": "No Dhan access token saved."}
+    try:
+        exp = jwt.decode(token, options={"verify_signature": False})["exp"]
+        expires = datetime.fromtimestamp(int(exp), IST)
+    except Exception:                              # noqa: BLE001 - any bad token
+        return {"state": "UNKNOWN", "expires_at": None, "hours_left": None,
+                "detail": "Dhan token unreadable — paste it again in Settings."}
+
+    at = expires.strftime("%a %d %b %H:%M")
+    left = (expires - now).total_seconds()
+    hours = round(left / 3600, 1)
+    if left <= 0:
+        return {"state": "EXPIRED", "expires_at": at, "hours_left": 0.0,
+                "detail": f"Dhan token EXPIRED {at}. Market data will not load "
+                          f"until you paste a fresh token."}
+    if expires < _next_close(now):
+        return {"state": "SOON", "expires_at": at, "hours_left": hours,
+                "detail": f"Dhan token expires {at} — before the next 15:30 close. "
+                          f"Data will cut out mid-session. Refresh it before you trade."}
+    return {"state": "OK", "expires_at": at, "hours_left": hours,
+            "detail": f"Dhan token valid until {at} ({hours}h)."}
 
 
 @dataclass

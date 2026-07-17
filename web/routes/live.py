@@ -76,7 +76,8 @@ def _chart_symbols() -> list[Instrument]:
 def live(request: Request):
     return templates.TemplateResponse("live.html", {
         "request": request, "status": _market_status(),
-        "symbols": [i.symbol for i in _chart_symbols()], "intervals": INTERVALS})
+        "symbols": [i.symbol for i in _chart_symbols()], "intervals": INTERVALS,
+        "tok": deps.get_token_status()})
 
 
 @router.get("/live/partials/ticker", response_class=HTMLResponse)

@@ -1,0 +1,8 @@
+{# Dhan tokens die silently mid-session; say so before the open, not after. #}
+{% if tok.state == "EXPIRED" %}
+  <div class="banner err">🔴 {{ tok.detail }} <a href="/settings">Refresh token →</a></div>
+{% elif tok.state == "SOON" %}
+  <div class="banner warn">⏳ {{ tok.detail }} <a href="/settings">Refresh token →</a></div>
+{% elif tok.state == "UNKNOWN" %}
+  <div class="banner warn">{{ tok.detail }} <a href="/settings">Open Settings →</a></div>
+{% endif %}

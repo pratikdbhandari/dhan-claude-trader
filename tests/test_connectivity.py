@@ -51,3 +51,74 @@ def test_failure_is_reported_not_raised():
     ltp = next(c for c in checks if "LTP" in c.name)
     assert ltp.status == "FAIL" and "403" in ltp.detail
     assert "FAILED" in verdict(checks)
+
+
+# ---------------------------------------------------------------- token pre-flight
+def _tok(expires_at):
+    import jwt
+    return jwt.encode({"exp": int(expires_at.timestamp()), "dhanClientId": "x"},
+                      "irrelevant-we-never-verify", algorithm="HS256")
+
+
+def test_token_status_ok_when_it_outlives_the_next_close():
+    from datetime import datetime, timedelta
+    from services.connectivity import token_status
+    from services.market_clock import IST
+    now = datetime(2026, 7, 17, 9, 0, tzinfo=IST)          # Fri, pre-open
+    s = token_status(_tok(now + timedelta(days=20)), now=now)
+    assert s["state"] == "OK" and s["hours_left"] > 400
+
+
+def test_token_dying_midsession_tomorrow_is_flagged_soon():
+    """The real 2026-07-16 blocker: checked late Thursday night, the token
+    expires 09:21 Friday — after Thursday's close, so a naive 'expires today?'
+    test calls it fine, but it dies 6 minutes into Friday's session."""
+    from datetime import datetime
+    from services.connectivity import token_status
+    from services.market_clock import IST
+    thu_night = datetime(2026, 7, 16, 23, 58, tzinfo=IST)
+    fri_0921 = datetime(2026, 7, 17, 9, 21, tzinfo=IST)
+    s = token_status(_tok(fri_0921), now=thu_night)
+    assert s["state"] == "SOON"
+    assert "before the next 15:30 close" in s["detail"]
+    assert s["expires_at"] == "Fri 17 Jul 09:21"
+
+
+def test_token_dying_before_todays_close_is_soon():
+    from datetime import datetime
+    from services.connectivity import token_status
+    from services.market_clock import IST
+    now = datetime(2026, 7, 17, 10, 0, tzinfo=IST)         # Fri, mid-session
+    s = token_status(_tok(datetime(2026, 7, 17, 14, 0, tzinfo=IST)), now=now)
+    assert s["state"] == "SOON"
+
+
+def test_token_expired():
+    from datetime import datetime
+    from services.connectivity import token_status
+    from services.market_clock import IST
+    now = datetime(2026, 7, 17, 10, 0, tzinfo=IST)
+    s = token_status(_tok(datetime(2026, 7, 17, 9, 30, tzinfo=IST)), now=now)
+    assert s["state"] == "EXPIRED" and s["hours_left"] == 0.0
+    assert "EXPIRED" in s["detail"]
+
+
+def test_token_missing_or_garbage_is_unknown():
+    from services.connectivity import token_status
+    assert token_status(None)["state"] == "UNKNOWN"
+    assert token_status("")["state"] == "UNKNOWN"
+    assert token_status("not-a-jwt")["state"] == "UNKNOWN"
+    assert token_status("aaa.bbb.ccc")["state"] == "UNKNOWN"
+
+
+def test_token_status_never_verifies_signature():
+    """Token is signed by Dhan with a secret we do not hold; reading exp must
+    still work."""
+    from datetime import datetime, timedelta
+    from services.connectivity import token_status
+    from services.market_clock import IST
+    import jwt
+    now = datetime(2026, 7, 17, 9, 0, tzinfo=IST)
+    foreign = jwt.encode({"exp": int((now + timedelta(days=30)).timestamp())},
+                         "dhans-secret-we-do-not-have", algorithm="HS256")
+    assert token_status(foreign, now=now)["state"] == "OK"

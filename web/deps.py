@@ -34,6 +34,12 @@ def get_dhan(mode: str | None = None) -> DhanClient:
                       mode=TradeMode(mode))
 
 
+def get_token_status():
+    """Pre-flight: will the saved Dhan token survive the next session? No network."""
+    from services.connectivity import token_status
+    return token_status(config_store.get_setting("DHAN_ACCESS_TOKEN"))
+
+
 def get_risk_config():
     return risk_manager.load_risk_config({
         "MAX_DAILY_LOSS": config_store.get_setting("MAX_DAILY_LOSS", "10000"),
