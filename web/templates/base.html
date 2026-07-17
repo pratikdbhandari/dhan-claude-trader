@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Dhan-Claude Trader{% endblock %}</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/app.css?v={{ static_v }}">
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/plotly.min.js" defer></script>
-  <script src="/static/app.js" defer></script>
+  <script src="/static/app.js?v={{ static_v }}" defer></script>
 </head>
 <body>
   {% set p = request.url.path %}

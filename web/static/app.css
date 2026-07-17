@@ -186,7 +186,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);
 .chart-controls select{background:var(--surface);color:var(--ink);border:1px solid var(--border);
   border-radius:var(--rc);padding:6px 10px;font-size:12.5px}
 #chartbox{padding:12px}
-#chartbox .chart{height:430px;border:none;background:transparent}
+#chartbox .chart{height:560px;border:none;background:transparent}
 .chart-meta{font-size:12.5px;margin-bottom:6px;color:var(--ink-dim)}
 
 /* ---------- analysis page ---------- */

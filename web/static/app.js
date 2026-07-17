@@ -19,7 +19,15 @@ function replot(s){
   try{
     var fig = JSON.parse(s.textContent);
     var el = document.getElementById(s.dataset.target);
-    if(el && window.Plotly){ Plotly.newPlot(el, fig.data||[], fig.layout||{}, {displayModeBar:false, responsive:true}); }
+    if(!el || !window.Plotly) return;
+    // Price charts get TradingView-style handling: scroll to zoom, drag to pan,
+    // and a toolbar for the zoom/reset affordances. Report charts stay static.
+    var live = s.dataset.target === 'livechart';
+    Plotly.newPlot(el, fig.data||[], fig.layout||{}, live ? {
+      responsive:true, scrollZoom:true, displaylogo:false,
+      displayModeBar:'hover',
+      modeBarButtonsToRemove:['select2d','lasso2d','autoScale2d','toggleSpikelines']
+    } : {displayModeBar:false, responsive:true});
   }catch(e){ console.error('plot render failed', e); }
 }
 function renderPlots(root){ (root||document).querySelectorAll('script.plotly-fig').forEach(replot); }
