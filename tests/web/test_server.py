@@ -6,7 +6,10 @@ def test_health_ok():
     app = create_web_app()
     with TestClient(app) as c:
         r = c.get("/health")
-    assert r.status_code == 200 and r.json() == {"status": "ok"}
+    assert r.status_code == 200
+    # the `app` field is load-bearing: the silent launcher uses it to tell our
+    # server apart from anything else squatting on port 8501
+    assert r.json() == {"status": "ok", "app": "dhan-claude-trader"}
 
 
 def test_static_css_served():

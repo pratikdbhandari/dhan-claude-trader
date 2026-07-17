@@ -35,5 +35,6 @@ dist/
 *.spec.bak
 
 # runtime audit ledger
+web-server.log
 audit.jsonl
 cost.jsonl

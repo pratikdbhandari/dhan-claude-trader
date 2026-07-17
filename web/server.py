@@ -17,7 +17,10 @@ def create_web_app() -> FastAPI:
 
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        # `app` identifies us specifically: run_web_hidden.vbs probes this before
+        # opening a browser, and a bare {"status": "ok"} is answered by plenty of
+        # other servers (Streamlit included) that could hold port 8501.
+        return {"status": "ok", "app": "dhan-claude-trader"}
 
     from web.routes import (dashboard, live, analysis, reports, screener, backtest,
                             options, settings, golive, btst)
