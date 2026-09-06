@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The trading server runs on the user's own PC/LAN over plain HTTP
+  (uvicorn on port 8501), so cleartext must be allowed. A tunnel URL
+  (https) also works and is preferred when reachable off-LAN.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
